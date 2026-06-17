@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "mcpdoc": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "mcpdoc",
+        "mcpdoc",
+        "--urls",
+        "LangGraph:https://langchain-ai.github.io/langgraph/llms.txt",
+        "LangChain:https://python.langchain.com/llms.txt",
+        "--transport",
+        "stdio"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "langfuse": {
+      "type": "http",
+      "url": "${LANGFUSE_HOST}/api/public/mcp",
+      "headers": {
+        "Authorization": "Basic ${LANGFUSE_AUTH_B64}"
+      }
+    }
+  }
+}

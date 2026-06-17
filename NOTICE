@@ -1,0 +1,39 @@
+lasso-mode
+==========
+
+lasso-mode is a derivative and aggregate work built on three MIT-licensed
+open-source projects. Each is used under the terms of the MIT License.
+
+1. pstack
+   Author:  Lauren Tan (poteto)
+   Source:  https://github.com/cursor/plugins/tree/main/pstack
+   Commit:  e46364b8be46000b7df0f260550cd712afbb8d36
+   Use:     The workflow engine. The router skill (lasso-mode), the 20
+            principle skills, the 16 playbooks, and the workflow skills
+            (how, why, architect, arena, interrogate, tdd, reflect, unslop,
+            recall, blast-radius, figure-it-out, show-me-your-work,
+            automate-me, typescript-best-practices, setup-lasso) are ported
+            and adapted from pstack's poteto-mode. Cursor-specific details
+            were adapted for Claude Code, and the cross-vendor multi-model
+            review panels were reworked into single-provider, divergent-lens
+            panels.
+
+2. langchain-skills
+   Author:  LangChain
+   Source:  https://github.com/langchain-ai/langchain-skills
+   Commit:  c88193a48f387560697e1152e32dc5fd239c83e4
+   Use:     Vendored verbatim into skills/stack/ (langchain-fundamentals,
+            langchain-middleware, langchain-rag, langchain-dependencies,
+            ecosystem-primer, langgraph-fundamentals, langgraph-persistence,
+            langgraph-human-in-the-loop, langgraph-cli, deep-agents-core,
+            deep-agents-memory, deep-agents-orchestration, managed-deep-agents,
+            swarm).
+
+3. agent-skills (Vercel Labs)
+   Author:  Vercel
+   Source:  https://github.com/vercel-labs/agent-skills
+   Commit:  f8a72b9603728bb92a217a879b7e62e43ad76c81
+   Use:     Vendored verbatim into skills/stack/vercel-react-best-practices/
+            (the react-best-practices skill: React and Next.js performance
+            guidelines).
+</content>
