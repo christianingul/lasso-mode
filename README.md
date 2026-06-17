@@ -1,22 +1,87 @@
 # lasso-mode
 
-Tame and squeeze the most out of Claude Code. lasso-mode is an engineering-rigor workflow system plus a stack-aware documentation layer, packaged as standalone Claude Code skills.
+**Tame Claude Code. Make it work like a disciplined senior engineer on your exact stack.**
 
-It does two things:
+lasso-mode is a collection of standalone Claude Code skills that does two things at once: it enforces rigorous engineering workflow, and it routes the agent to current, authoritative documentation for your stack instead of letting it guess from stale memory. It is the "lasso" you throw over an otherwise fast-but-undisciplined agent.
 
-1. **Rigor.** A router skill (`/lasso-mode`) matches a task to one of 16 playbooks, grounded in 20 one-principle-each skills, and routes to focused workflow skills (`how`, `why`, `architect`, `interrogate`, `tdd`, `reflect`, `unslop`, and more). The goal is less code, higher quality, verified work. This half is a Claude Code port of [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan (poteto).
+---
 
-2. **Stack awareness.** A `skills.md` index (owned by the router) tells the agent where to go for our stack: LangChain, LangGraph, Deep Agents, Langfuse, React, Next.js, Python. For any of these it follows a fixed **escalation ladder** so it stops coding fast-moving libraries from stale memory.
+## The problem it solves
 
-## The escalation ladder
+Claude Code is powerful, and that power cuts both ways. Left unguided, an agent tends to:
 
-For any stack technology, climb in order and stop at the first rung that answers the question:
+- **Write slop.** It over-engineers, adds layers nobody asked for, and optimizes for lines of code instead of a maintainer's sanity.
+- **Skip the proof.** "It compiles" stands in for "it works." Bugs get patched at the symptom, not the root.
+- **Trust stale memory.** It writes LangGraph, Next.js, or Langfuse code from whatever it absorbed at training time, which is often a version or two behind the API that actually ships today.
 
-1. **Source skill.** Read the vendored, authored skill (e.g. `langgraph-fundamentals`, `vercel-react-best-practices`). Conventions plus distilled guidance.
-2. **MCP docs tool.** If the skill is insufficient, query the technology's MCP server for live, version-specific docs.
-3. **Pre-trained weights.** Only if neither satisfies the request, fall back to your own knowledge, and say so.
+The first two are workflow problems. The third is a knowledge problem. lasso-mode attacks both.
 
-The full map lives in `skills/lasso-mode/references/skills.md`.
+---
+
+## Design philosophy
+
+**Go deep first, then go fast.** Throughput without quality is not the goal. The point is to write *less* code of *higher* quality, so that you can then parallelize across many agents with confidence. This half of the philosophy is inherited directly from [pstack](https://github.com/cursor/plugins/tree/main/pstack); lasso-mode is a Claude Code port of its engine.
+
+The philosophy shows up as four concrete commitments:
+
+### 1. Principles ground every decision
+
+Twenty single-idea skills (`principle-laziness-protocol`, `principle-prove-it-works`, `principle-fix-root-causes`, …) encode the non-negotiables. The router reads them at the start of every task, and every decision it makes must trace back to a named principle. A citation with no decision behind it means the rule was skipped. This is what stops "be a good engineer" from being a vibe.
+
+### 2. The work proves itself
+
+Verification is against the real artifact, not a proxy. Bugs are reproduced before they are fixed. Multi-step work is sequenced into units that each end in a check. The deliverable is evidence, not assertion.
+
+### 3. Knowledge has an explicit escalation ladder
+
+This is the part pstack doesn't have, and the reason lasso-mode exists for *your* stack. When a task touches a known technology, the agent does not start from its own weights. It climbs a fixed ladder and stops at the first rung that answers the question:
+
+1. **Source skill.** Read the vendored, authored skill for that technology (e.g. `langgraph-fundamentals`, `vercel-react-best-practices`). Conventions plus distilled, opinionated guidance. Loads only when read, so it is nearly free until needed.
+2. **MCP docs tool.** If the skill is insufficient, query the technology's MCP server for live, version-specific documentation.
+3. **Pre-trained weights.** Only if neither rung satisfies the request does the agent fall back to its own knowledge, and it says so, so the gap can be closed later.
+
+The ladder is one-directional. Skipping rung 1 to guess from weights is the exact failure mode the whole system exists to prevent. The map of technology to rungs lives in [`skills/lasso-mode/references/skills.md`](./skills/lasso-mode/references/skills.md).
+
+### 4. Diversity comes from divergent lenses, not different vendors
+
+pstack's review panels (`interrogate`, `arena`, `how` critics) run several frontier models from different vendors to get adversarial diversity. Claude Code is single-provider, so lasso-mode reworks those panels: each reviewer is a Claude agent given a deliberately divergent lens (correctness, architecture, security) and a model tier (`opus`, `sonnet`, `haiku`). The signal comes from the conflict between lenses, and agreement across them is high-confidence.
+
+---
+
+## Architecture
+
+```
+/lasso-mode  (router, the front door)
+├─ Principles index ............ 20 principle-* skills, read at task start
+├─ Playbooks ................... 16 step-by-step procedures, one per task type
+│   investigation · bug-fix · perf · hillclimb · feature · refactoring
+│   prototype · visual-parity · forensics · eval · autonomous-run
+│   session-pickup · pause-safely · multi-phase · authoring-a-skill · opening-a-pr
+├─ Workflow skills ............. how · why · architect · arena · interrogate
+│   tdd · reflect · unslop · recall · blast-radius · figure-it-out
+│   show-me-your-work · automate-me · typescript-best-practices · setup-lasso
+└─ Stack index (skills.md) ..... the escalation ladder
+    ├─ Source skills (skills/stack/) → vendored author skills + thin pointers
+    └─ MCP servers (.mcp.json) ... mcpdoc · context7 · langfuse
+```
+
+The router matches your request to a playbook, copies its steps in verbatim, and fires the workflow and stack skills as the steps need them. The `lasso-agent` subagent runs the same style end to end for delegated work.
+
+---
+
+## What it builds on
+
+lasso-mode is an aggregate of three MIT-licensed projects. Full attribution and commit pins are in [`NOTICE`](./NOTICE).
+
+| Source | By | What lasso-mode takes |
+|---|---|---|
+| [pstack](https://github.com/cursor/plugins/tree/main/pstack) | Lauren Tan (poteto) | The entire workflow engine: router, principles, playbooks, workflow skills. Ported from Cursor to Claude Code and rebranded. |
+| [langchain-ai/langchain-skills](https://github.com/langchain-ai/langchain-skills) | LangChain | The official LangChain, LangGraph, and Deep Agents skills, vendored verbatim into `skills/stack/`. |
+| [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | Vercel | The official `react-best-practices` skill (React + Next.js performance), vendored verbatim. |
+
+The port from Cursor to Claude Code touched only the harness seams: `Task` → `Agent`, read-only fan-out → the `Explore` subagent, model slugs → Claude tiers, Cursor built-ins remapped (`babysit` → `code-review`, `create-skill` → a self-contained authoring playbook, `deslop` → `unslop`), and the multi-vendor panels reworked as above. The principles and most playbooks port verbatim.
+
+---
 
 ## Install
 
@@ -24,13 +89,27 @@ The full map lives in `skills/lasso-mode/references/skills.md`.
 ./install.sh
 ```
 
-This symlinks every skill into `~/.claude/skills/` and the agent into `~/.claude/agents/` (override the target with `CLAUDE_HOME`). Edits in this repo take effect live. In Claude Code, run `/reload-plugins` (or restart), then check `/help` and `/agents`.
+This symlinks every skill into `~/.claude/skills/` and the agent into `~/.claude/agents/` (override the target with `CLAUDE_HOME`). Symlinks mean edits in this repo take effect live. In Claude Code, run `/reload-plugins` or restart, then check `/help` and `/agents`.
 
-Then start a task with `/lasso-mode <your request>`.
+> Because install uses symlinks into your global `~/.claude/`, switching this repo to a different branch changes your active skills. That is convenient for iteration, worth knowing for surprises.
+
+## Invoke
+
+```bash
+/lasso-mode <your request>
+```
+
+It is `disable-model-invocation: true`, so it fires only when you call it. Examples:
+
+```
+/lasso-mode build a LangGraph node that summarizes a thread, behind a flag, and verify it
+/lasso-mode this Next.js page has a data waterfall, trace it and fix
+/lasso-mode investigation: how does our checkpointer scope subgraph state?
+```
+
+The model-invocable stack skills (`langgraph-fundamentals`, `nextjs`, `unslop`, and friends) and `/how`, `/why` can also be triggered on their own. `/lasso-mode` is the front door that orchestrates them.
 
 ## MCP servers
-
-The stack docs layer uses three MCP servers, configured in `.mcp.json` (project-scoped; copy into `~/.claude/` for global). Claude Code expands `${VAR}` from your environment.
 
 | Server | Covers | Setup |
 |---|---|---|
@@ -38,32 +117,18 @@ The stack docs layer uses three MCP servers, configured in `.mcp.json` (project-
 | `context7` | React, Next.js, Python, thousands of libraries | Runs via `npx`. Keyless; add `CONTEXT7_API_KEY` for higher limits. |
 | `langfuse` | Your Langfuse prompts and observability | Set `LANGFUSE_HOST` and `LANGFUSE_AUTH_B64`. |
 
-`LANGFUSE_AUTH_B64` is the base64 of `public_key:secret_key`:
-
 ```bash
 export LANGFUSE_HOST="https://cloud.langfuse.com"
 export LANGFUSE_AUTH_B64="$(printf '%s:%s' "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SECRET_KEY" | base64)"
 ```
 
-Run `/mcp` in Claude Code to confirm the servers connect. A server that isn't connected is treated as a gap; the agent falls through to the next rung instead of blocking.
+Run `/mcp` to confirm connections. A server that is not connected is treated as a gap; the agent falls through to the next rung instead of blocking.
 
-## Configuring models
+## Configure models
 
-Every agent here is a Claude model. Panels (`interrogate`, `arena`, `how` critics) get their diversity from divergent lenses and model tiers (`opus`/`sonnet`/`haiku`), not from different vendors. Run `/setup-lasso` to override the per-role tier defaults; skills fall back to sensible defaults without it.
+Every agent here is Claude. Run `/setup-lasso` to override the per-role tier defaults (`opus` / `sonnet` / `haiku`); skills fall back to sensible defaults without it.
 
-## What's inside
+## License
 
-- `skills/lasso-mode/` — the router: principles index, 16 playbooks, the `references/skills.md` stack index.
-- `skills/principle-*/` — 20 one-principle-each skills.
-- `skills/{how,why,architect,arena,interrogate,tdd,reflect,unslop,recall,blast-radius,figure-it-out,show-me-your-work,automate-me,typescript-best-practices,setup-lasso}/` — workflow skills.
-- `skills/stack/` — vendored author skills (LangChain, LangGraph, Deep Agents, Vercel React) plus thin `nextjs`, `python`, `langfuse` skills that escalate to MCP.
-- `agents/lasso-agent.md` — the subagent that runs the full lasso style.
-
-## Credits
-
-lasso-mode stands on three MIT-licensed projects. See [`NOTICE`](./NOTICE) for details and commit pins.
-
-- [pstack](https://github.com/cursor/plugins/tree/main/pstack) — the workflow engine, by Lauren Tan (poteto).
-- [langchain-ai/langchain-skills](https://github.com/langchain-ai/langchain-skills) — the LangChain/LangGraph/Deep Agents skills.
-- [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) — the React/Next.js performance skill.
+MIT. See [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE).
 </content>
