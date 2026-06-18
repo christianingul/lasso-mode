@@ -25,6 +25,7 @@ Remaining triggers:
 - After opening a PR → review and triage with the built-in **code-review** (or **review** for a GitHub PR) skill. For a sustained watch, `/loop /code-review`.
 - The agentic **security-review** or a **code-review** pass commented → skeptical posture. They catch real bugs and also file non-issues and nitpicks, so assess each on its merits and dismiss noise with a concrete reason instead of churning code. Triage fix / dismiss / ask yourself.
 - Broken skill mid-task → fix it in its own PR. Don't block. Don't silently work around it.
+- Trust but verify is structural, not vibes. In a project armed with the **setup-lasso-verify** hook, a `Stop` hook re-runs the project's checks on every finished turn that changed the diff and blocks the stop while any are red. Treat a block as a real failure to fix at the root, not noise to route around. Asked to "verify the work", "trust but verify", or to set up post-task checks, arm it with **setup-lasso-verify**.
 - Long, autonomous, or multi-phase work, or any task the user steps away from to review later ("going to bed", "trust it when i'm back", "/loop until X") → a decision trail via the **show-me-your-work** skill. Commit it when stakes need an auditable record; keep it local otherwise.
 
 ## Principles
