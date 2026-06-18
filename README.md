@@ -124,6 +124,26 @@ export LANGFUSE_AUTH_B64="$(printf '%s:%s' "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SEC
 
 Run `/mcp` to confirm connections. A server that is not connected is treated as a gap; the agent falls through to the next rung instead of blocking.
 
+## Verify hooks (trust but verify)
+
+The router asks the agent to prove its work (`principle-prove-it-works`). A hook enforces it deterministically, without the agent's cooperation. `hooks/lasso-verify.sh` is a `Stop` hook. When an agent finishes a turn that changed the diff, it re-runs the project's checks (typecheck, lint, build, test) and blocks the stop while anything is red, feeding the failing output back so the agent fixes the root cause before finishing.
+
+It is one file in three modes. The hook Claude Code invokes on `Stop`, an idempotent project installer, and a rerunnable manual check a reviewer trusts instead of your word.
+
+Arm a project:
+
+```bash
+/setup-lasso-verify
+```
+
+That detects the project's checks (Node, Python, Rust, Go), merges a `Stop` hook into its `.claude/settings.json`, writes a tunable `.claude/lasso-verify.conf`, and gitignores the loop-guard state. Run the same check by hand anytime:
+
+```bash
+~/.claude/hooks/lasso-verify.sh check
+```
+
+Verification is project-scoped and opt-in, so it never fires on unrelated chats. The loop is bounded: the hook stops blocking once the diff stops changing or after `LASSO_MAX_ROUNDS` (default 3). A clean tree is a silent no-op. Edit `.claude/lasso-verify.conf` to add, drop, or retime checks. Keep them cheap and read-only. Never put a deploy or push in there.
+
 ## Configure models
 
 Every agent here is Claude. Run `/setup-lasso` to override the per-role tier defaults (`opus` / `sonnet` / `haiku`); skills fall back to sensible defaults without it.

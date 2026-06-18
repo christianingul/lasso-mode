@@ -26,6 +26,15 @@ for agent in "$REPO"/agents/*.md; do
   echo "  $(basename "${agent%.md}")"
 done
 
+HOOKS_DEST="$CLAUDE_HOME/hooks"
+mkdir -p "$HOOKS_DEST"
+echo "Linking hooks into $HOOKS_DEST"
+for hook in "$REPO"/hooks/*.sh; do
+  [ -e "$hook" ] || continue
+  ln -sfn "$hook" "$HOOKS_DEST/$(basename "$hook")"
+  echo "  $(basename "$hook")"
+done
+
 echo
 echo "Done. In Claude Code: run /reload-plugins (or restart), then /help and /agents to confirm."
 echo "MCP servers live in this repo's .mcp.json; set the env vars from the README to enable them."
