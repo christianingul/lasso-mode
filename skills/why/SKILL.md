@@ -43,7 +43,7 @@ Principles:
 - **Multiple hypotheses are valid.** When the evidence fits several stories, present them all with the evidence for each. Let the user triangulate.
 - **Beware rationalization.** Code that makes sense today may have been written for reasons that no longer apply, or for no good reason at all. Don't retrofit intent.
 
-Read `references/epistemics.md` for the full confidence framework and phrasing guide. The synthesizer must follow it.
+Read [`references/epistemics.md`](./references/epistemics.md) for the full confidence framework and phrasing guide. The synthesizer must follow it.
 
 ## Step 1. Understand the Target and the Question
 
@@ -121,9 +121,9 @@ Subagent config (each):
 - Investigators must not write files. That's a posture you state in the prompt, not a sandbox. The source control investigator only needs git and `gh`; keep it uniform with the rest anyway.
 
 Each investigator gets:
-1. The base prompt from `references/investigator-prompt.md`
-2. The category playbook `references/sources/<source>.md` for the selected MCP, adapted from the examples in `references/source-playbook.md`
-3. The cross-cutting `references/sources/incident-postmortem.md` **if the target code looks defensive** (null checks, retry logic, timeout handling, rate limiting, feature flags, egress guards, OOM handlers)
+1. The base prompt from [`references/investigator-prompt.md`](./references/investigator-prompt.md)
+2. The category playbook `references/sources/<source>.md` for the selected MCP, adapted from the examples in [`references/source-playbook.md`](./references/source-playbook.md)
+3. The cross-cutting [`references/sources/incident-postmortem.md`](./references/sources/incident-postmortem.md) **if the target code looks defensive** (null checks, retry logic, timeout handling, rate limiting, feature flags, egress guards, OOM handlers)
 4. The code anchor from Step 2 (file paths, symbols, commit hashes, PR numbers, ticket IDs)
 5. The user's original question
 
@@ -169,8 +169,8 @@ The synthesizer gets:
 1. The investigator findings, including any null results and any categories skipped with justification
 2. The code anchor from Step 2 (file paths, symbols, commit hashes, PR numbers, ticket IDs)
 3. The user's original question
-4. The epistemics framework from `references/epistemics.md`
-5. The synthesizer prompt template from `references/synthesizer-prompt.md`
+4. The epistemics framework from [`references/epistemics.md`](./references/epistemics.md)
+5. The synthesizer prompt template from [`references/synthesizer-prompt.md`](./references/synthesizer-prompt.md)
 
 Its job is the final output: a confidence-weighted, evidence-cited narrative with clearly separated "what we know" and "what we're inferring" sections, plus honest acknowledgment of gaps and null-result sources.
 
@@ -221,8 +221,8 @@ After the Sources Consulted block, if the user's `why` question is a precursor t
 
 ## Reference Files
 
-- `references/epistemics.md`. Confidence tiers and phrasing guide. The synthesizer must follow it.
-- `references/investigator-prompt.md`. Base prompt template for investigator subagents.
-- `references/source-playbook.md`. Index pointing at the category playbooks below.
+- [`references/epistemics.md`](./references/epistemics.md). Confidence tiers and phrasing guide. The synthesizer must follow it.
+- [`references/investigator-prompt.md`](./references/investigator-prompt.md). Base prompt template for investigator subagents.
+- [`references/source-playbook.md`](./references/source-playbook.md). Index pointing at the category playbooks below.
 - `references/sources/*.md`. One self-contained example playbook per category, plus cross-cutting `incident-postmortem.md`. Give an investigator the single file that matches its category and adapt it to the available MCP.
-- `references/synthesizer-prompt.md`. Prompt template for the synthesizer subagent, including the output format.
+- [`references/synthesizer-prompt.md`](./references/synthesizer-prompt.md). Prompt template for the synthesizer subagent, including the output format.

@@ -47,7 +47,7 @@ Spawn all explorers in a single message:
 - `subagent_type`: `Explore` (read-only; cannot edit files)
 - `model`: your configured how-explorer model (default `sonnet`)
 
-Each explorer gets the same base prompt from `references/explorer-prompt.md` plus a specific exploration angle naming its slice. Each explorer should:
+Each explorer gets the same base prompt from [`references/explorer-prompt.md`](./references/explorer-prompt.md) plus a specific exploration angle naming its slice. Each explorer should:
 - Start broad: Glob for relevant directories, Grep for key types/interfaces/class names
 - Follow the thread: from an entry point, trace the call chain (callers, callees, data flow, type definitions)
 - Read the actual code, don't guess from file names
@@ -65,7 +65,7 @@ Spawn a single subagent that explores and explains in one pass:
 - `subagent_type`: `Explore` (read-only)
 - `model`: your configured how-explainer model (default `opus`)
 
-The agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read `references/explainer-prompt.md` for the communication style and output format. Same structure, just no explorer findings as input.
+The agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read [`references/explainer-prompt.md`](./references/explainer-prompt.md) for the communication style and output format. Same structure, just no explorer findings as input.
 
 Proceed to Step 4.
 
@@ -76,7 +76,7 @@ Once all explorers return, spawn a single subagent to synthesize their findings 
 - `subagent_type`: `Explore` (read-only)
 - `model`: your configured how-explainer model (default `opus`)
 
-The explainer gets all explorers' findings and writes the human-facing explanation (output format below). Read `references/explainer-prompt.md` for the full prompt template. The explainer reconciles overlapping findings, resolves contradictions, and weaves the slices into a unified picture.
+The explainer gets all explorers' findings and writes the human-facing explanation (output format below). Read [`references/explainer-prompt.md`](./references/explainer-prompt.md) for the full prompt template. The explainer reconciles overlapping findings, resolves contradictions, and weaves the slices into a unified picture.
 
 ### Step 4. Present
 
@@ -116,10 +116,10 @@ For each critic:
 - `subagent_type`: `Explore` (read-only)
 - `model`: the tier named for that lens. Escalate any critic to `opus` when the architecture warrants deeper analysis. Override the panel via `/setup-lasso`.
 
-Read `references/critic-prompt.md` for the prompt template. Each critic gets:
+Read [`references/critic-prompt.md`](./references/critic-prompt.md) for the prompt template. Each critic gets:
 1. The explanation from Step 1 (so they don't re-explore)
 2. The relevant file paths (so they can read the actual code)
-3. The architectural critique rubric from `references/critique-rubric.md`
+3. The architectural critique rubric from [`references/critique-rubric.md`](./references/critique-rubric.md)
 
 ### Step 3. Lead Judgment
 

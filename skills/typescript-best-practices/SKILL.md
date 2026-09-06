@@ -21,4 +21,4 @@ Apply the **type-system-discipline** principle skill first; this skill grounds i
 | Schema-derived types | Reach for `Pick`/`Omit`/`Parameters`/`ReturnType`/`Awaited`/`typeof` before declaring a new interface. |
 | Object args | Pass objects, not positional, so argument order is self-documenting. Skip on hot paths (per-frame render, tokenizers, parsers). |
 
-Examples: `references/patterns.md`.
+Examples: [`references/patterns.md`](./references/patterns.md).

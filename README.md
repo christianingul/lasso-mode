@@ -2,7 +2,7 @@
 
 **Tame Claude Code. Make it work like a disciplined senior engineer on your exact stack.**
 
-lasso-mode is a collection of standalone Claude Code skills that does two things at once: it enforces rigorous engineering workflow, and it routes the agent to current, authoritative documentation for your stack instead of letting it guess from stale memory. It is the "lasso" you throw over an otherwise fast-but-undisciplined agent.
+lasso-mode is a collection of standalone agent skills that does two things at once: it enforces rigorous engineering workflow, and it routes the agent to current, authoritative documentation for your stack instead of letting it guess from stale memory. It is the "lasso" you throw over an otherwise fast-but-undisciplined agent. Built for Claude Code; the skills are plain `SKILL.md`, so Cursor, GitHub Copilot and Codex read them too.
 
 ---
 
@@ -85,13 +85,49 @@ The port from Cursor to Claude Code touched only the harness seams: `Task` → `
 
 ## Install
 
+### Claude Code
+
 ```bash
 ./install.sh
 ```
 
-This symlinks every skill into `~/.claude/skills/` and the agent into `~/.claude/agents/` (override the target with `CLAUDE_HOME`). Symlinks mean edits in this repo take effect live. In Claude Code, run `/reload-plugins` or restart, then check `/help` and `/agents`.
+This symlinks every skill into `~/.claude/skills/`, the agent into `~/.claude/agents/`, and the hooks into `~/.claude/hooks/` (override the target with `CLAUDE_HOME`). Symlinks mean edits in this repo take effect live. In Claude Code, run `/reload-plugins` or restart, then check `/help` and `/agents`.
 
 > Because install uses symlinks into your global `~/.claude/`, switching this repo to a different branch changes your active skills. That is convenient for iteration, worth knowing for surprises.
+
+### Cursor, Copilot, Codex, and everything else
+
+Every skill here is a plain `SKILL.md` folder, the format Cursor, GitHub Copilot, Codex, Gemini CLI and dozens of other agents already read. Nothing needs converting. Install with the [`skills` CLI](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add christianingul/lasso-mode --all              # every skill, every detected agent
+npx skills add christianingul/lasso-mode -g -a cursor -a github-copilot
+npx skills add . --list                                     # from a clone, without installing
+```
+
+It walks the repo for `SKILL.md` and finds all 55, including the nested ones under `skills/stack/`. Use `--copy` if your setup does not follow symlinks; `npx skills remove` undoes it.
+
+Where each agent looks:
+
+| Agent | `--agent` | Global path |
+|---|---|---|
+| Claude Code | `claude-code` | `~/.claude/skills/` |
+| Cursor | `cursor` | `~/.cursor/skills/` |
+| GitHub Copilot | `github-copilot` | `~/.copilot/skills/` |
+| Codex | `codex` | `~/.codex/skills/` |
+
+Cursor and VS Code Copilot also scan `~/.claude/skills/`, so `./install.sh` can cover all three on its own.
+
+## Portability
+
+The skills load anywhere. Four things do not carry, and each one fails quietly:
+
+- **Parallel fan-out.** `arena`, `interrogate`, `why`, `how`, `reflect` and `swarm` are built on spawning several subagents at once. A host that cannot spawn subagents collapses them to a single pass, which still produces a confident writeup. `arena` in particular exists so different models disagree; one model asked three times agrees with itself.
+- **The `lasso-agent` subagent and `.mcp.json`.** The `skills` CLI installs skills only. Subagent definitions and MCP servers need their host's own configuration.
+- **Claude Code built-ins.** Skills reference `/loop`, `code-review`, `security-review`, `verify`, `AskUserQuestion` and `~/.claude/projects/` memory paths. Elsewhere an agent will improvise a substitute instead of stopping.
+- **The verify hooks.** `hooks/lasso-verify.sh` is a Claude Code Stop hook. Other agents have their own hook systems, or none.
+
+Run `python3 scripts/check-portability.py .` to check every skill against the schema all three hosts share: name, description length, folder match, and bundled resources referenced as relative markdown links. It exits non-zero on a real break, so it works as a pre-commit or CI step.
 
 ## Invoke
 
