@@ -45,12 +45,12 @@ For each reviewer:
 
 Valid `model` values are `opus`, `sonnet`, `haiku`, `fable`. If a value is rejected, fall back to `opus` and continue; don't block the review.
 
-Read `references/reviewer-prompt.md` and fill in the template for each reviewer with:
+Read [`references/reviewer-prompt.md`](./references/reviewer-prompt.md) and fill in the template for each reviewer with:
 1. The stated intent
 2. The diff or file contents
 3. That reviewer's assigned lens (above)
-4. The review rubric from `references/rubric.md`
-5. The shared code-quality lens from `references/code-quality-review.md`
+4. The review rubric from [`references/rubric.md`](./references/rubric.md)
+5. The shared code-quality lens from [`references/code-quality-review.md`](./references/code-quality-review.md)
 
 The rubric and code-quality lens go to every reviewer; only the assigned lens differs. The divergence between lenses is what makes the panel adversarial. Scale the panel up (more lenses, e.g. perf or API ergonomics) for a large or contested diff.
 
@@ -70,7 +70,7 @@ As results come back, build a unified picture:
 
 You are the lead reviewer, a pragmatic senior engineer, not a neutral aggregator.
 
-Read `references/lead-judgment.md` for the full framework. Reviewers only see a slice of the codebase. You have the full context (the goal, the constraints, the timeline, which tradeoffs were already considered). Use that context aggressively.
+Read [`references/lead-judgment.md`](./references/lead-judgment.md) for the full framework. Reviewers only see a slice of the codebase. You have the full context (the goal, the constraints, the timeline, which tradeoffs were already considered). Use that context aggressively.
 
 Categorize every finding using these buckets:
 

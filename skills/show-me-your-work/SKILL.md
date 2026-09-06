@@ -12,7 +12,7 @@ For work a human reviews after the fact, a decision trail lets them reconstruct 
 
 A single TSV file, one row per decision. TSV because GitHub renders it as a sortable table, `column -s$'\t' -t` and spreadsheets read it, and a row appends with one command. Cells stay single-line. Evidence is a pointer, not prose.
 
-Copy `references/decision-log-template.tsv` (the header row) to start a clean log. Columns:
+Copy [`references/decision-log-template.tsv`](./references/decision-log-template.tsv) (the header row) to start a clean log. Columns:
 
 - **ts.** ISO8601 timestamp. The timeline axis.
 - **phase.** The phase or workstream.

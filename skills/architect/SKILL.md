@@ -28,7 +28,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 ## Phase B: Sketch
 
-Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt. Each candidate produces a design package shaped per `references/rationale-template.md`: the caller's usage written first, then the type sketch, function signatures, module map, and prose rationale derived from it.
+Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass [`references/runner-prompt.md`](./references/runner-prompt.md) as each runner's prompt. Each candidate produces a design package shaped per [`references/rationale-template.md`](./references/rationale-template.md): the caller's usage written first, then the type sketch, function signatures, module map, and prose rationale derived from it.
 
 Use your configured architect runners (defaults `opus`, `opus`, `sonnet`).
 
@@ -76,4 +76,4 @@ When you scrap:
 
 ## Outputs
 
-The caller's usage is written first and the type sketch derived from it. One file with new types and signatures for small changes; module map plus type definitions for larger work. The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision.
+The caller's usage is written first and the type sketch derived from it. One file with new types and signatures for small changes; module map plus type definitions for larger work. The rationale ships alongside, shaped per [`references/rationale-template.md`](./references/rationale-template.md), including the usage sketch and the synthesis decision.

@@ -3,14 +3,15 @@ name: swarm
 description: >-
   Dispatches many independent items in parallel: create a table, fan out to
   subagents, aggregate results. One row = one unit of work.
-compatibility: >-
-  Requires @langchain/quickjs code interpreter with swarm_task PTC tool
 metadata:
   entrypoint: scripts/index.ts
   required-ptc-tools: swarm_task read_file write_file edit_file glob
 ---
 
 # Swarm
+
+**Requires** the `@langchain/quickjs` code interpreter with the `swarm_task` PTC
+tool. Without it, stop and say so rather than falling back to sequential work.
 
 Process many independent items in parallel. `create` builds a table handle;
 `run` fans work out across rows and merges results back. One row = one unit
