@@ -22,13 +22,7 @@ Skip when the conversation is trivial, off-topic, or already covered by an exist
 
 ### 1. Locate the active transcript
 
-The parent finds its own transcript file before fanning out. Claude Code stores session transcripts at `~/.claude/projects/<slug>/<session-id>.jsonl`, where `<slug>` is the current working directory with the leading slash dropped and every `/` turned into `-` (so `/Users/you/proj` becomes `Users-you-proj`). Scope to this project's slug directory only; do not glob across `~/.claude/projects/*/`, which reads private chats from unrelated projects.
-
-```bash
-ls -t ~/.claude/projects/<slug>/*.jsonl 2>/dev/null | head -10
-```
-
-For each candidate, read the first JSONL line and check that its message text contains the conversation's opening user prompt. Take the matching path. If no path resolves, write a tight digest of the session and pass that instead.
+The parent finds its own transcript file before fanning out. Follow [reading session transcripts](../lasso-mode/references/transcripts.md) for the path rule, the listing command, and the cross-project fence. Match a candidate by checking that its first line contains this conversation's opening user prompt. If no path resolves, write a tight digest of the session and pass that instead.
 
 ### 2. Spawn three reviewers in parallel
 

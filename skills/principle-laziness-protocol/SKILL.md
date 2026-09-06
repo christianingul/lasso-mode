@@ -15,3 +15,5 @@ Writing code is cheap for you, which makes over-engineering easy. Counter it by 
 - **Question the threading.** If a task asks you to pass a new signal through types, schemas, pipelines, or similar layers, stop and look for a more direct path.
 
 **Prime directive:** If a human developer would find the code exhausting to maintain, it is a bad solution. Be lazy. Stay simple.
+
+Two neighbours share this bias and split the work. [Subtract Before You Add](../principle-subtract-before-you-add/SKILL.md) governs the *sequence*: remove first, then build on the simpler base. [Minimize Reader Load](../principle-minimize-reader-load/SKILL.md) supplies the *measure*: layers to trace and state to hold, so "too complex" is a count rather than a feeling. This one is the reflex you apply while writing the diff.

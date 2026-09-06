@@ -56,10 +56,11 @@ pstack's review panels (`interrogate`, `arena`, `how` critics) run several front
 ├─ Playbooks ................... 16 step-by-step procedures, one per task type
 │   investigation · bug-fix · perf · hillclimb · feature · refactoring
 │   prototype · visual-parity · forensics · eval · autonomous-run
-│   session-pickup · pause-safely · multi-phase · authoring-a-skill · opening-a-pr
+│   session-pickup · pause-safely · authoring-a-skill · opening-a-pr
 ├─ Workflow skills ............. how · why · architect · arena · interrogate
 │   tdd · reflect · unslop · recall · blast-radius · figure-it-out
-│   show-me-your-work · automate-me · typescript-best-practices · setup-lasso
+│   show-me-your-work · automate-me · typescript-best-practices
+│   setup-lasso · setup-lasso-verify
 └─ Stack index (skills.md) ..... the escalation ladder
     ├─ Source skills (skills/stack/) → vendored author skills + thin pointers
     └─ MCP servers (.mcp.json) ... mcpdoc · context7 · langfuse

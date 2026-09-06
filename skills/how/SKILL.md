@@ -123,12 +123,6 @@ Read [`references/critic-prompt.md`](./references/critic-prompt.md) for the prom
 
 ### Step 3. Lead Judgment
 
-Same framework as the interrogate skill. You're a pragmatic lead, not an aggregator.
-
-Categorize findings:
-- **Act on.** Architectural problems worth fixing now
-- **Consider.** Real concerns, but the cost/benefit is unclear
-- **Noted.** Valid observations, low priority
-- **Dismissed.** Wrong, missing context, or style preference
+Read [`../interrogate/references/lead-judgment.md`](../interrogate/references/lead-judgment.md) and apply it. It owns the framework: the four buckets, the filtering principles, and the posture. You're a pragmatic lead, not an aggregator. The critics saw an architecture through one lens each; you have the full context.
 
 Present the explanation first (from Step 1), then the critique verdict below it. The explanation should stand on its own; someone who just wants to understand the system shouldn't wade through critique.
