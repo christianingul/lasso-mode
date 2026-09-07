@@ -74,13 +74,14 @@ The router matches your request to a playbook, copies its steps in verbatim, and
 
 ## What it builds on
 
-lasso-mode is an aggregate of three MIT-licensed projects. Full attribution and commit pins are in [`NOTICE`](./NOTICE).
+lasso-mode is an aggregate of four MIT-licensed projects. Full attribution and commit pins are in [`NOTICE`](./NOTICE).
 
 | Source | By | What lasso-mode takes |
 |---|---|---|
 | [pstack](https://github.com/cursor/plugins/tree/main/pstack) | Lauren Tan (poteto) | The entire workflow engine: router, principles, playbooks, workflow skills. Ported from Cursor to Claude Code and rebranded. |
 | [langchain-ai/langchain-skills](https://github.com/langchain-ai/langchain-skills) | LangChain | The official LangChain, LangGraph, and Deep Agents skills, vendored verbatim into `skills/stack/`. |
 | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | Vercel | The official `react-best-practices` skill (React + Next.js performance), vendored verbatim. |
+| [davidondrej/skills](https://github.com/davidondrej/skills) | David Ondrej | The dangerous-command denylist behind `lasso-guard`, plus the `goal` and `git-worktree` skills, adapted. |
 
 The port from Cursor to Claude Code touched only the harness seams: `Task` → `Agent`, read-only fan-out → the `Explore` subagent, model slugs → Claude tiers, Cursor built-ins remapped (`babysit` → `code-review`, `create-skill` → a self-contained authoring playbook, `deslop` → `unslop`), and the multi-vendor panels reworked as above. The principles and most playbooks port verbatim.
 
@@ -172,6 +173,24 @@ export LANGFUSE_AUTH_B64="$(printf '%s:%s' "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SEC
 ```
 
 Run `/mcp` to confirm connections. A server that is not connected is treated as a gap; the agent falls through to the next rung instead of blocking.
+
+## Command guard (block before, verify after)
+
+Two hooks, opposite ends of a turn.
+
+```bash
+~/.claude/hooks/lasso-guard.sh install     # arm it in this project
+~/.claude/hooks/lasso-guard.sh test        # 303 assertions
+~/.claude/hooks/lasso-guard.sh check 'rm -rf ~'   # ask about one command
+```
+
+`lasso-guard` is a `PreToolUse` hook on Bash. It matches the command against [`hooks/dangerous-patterns.txt`](./hooks/dangerous-patterns.txt), 36 regexes covering `rm` at `/` or `~`, raw-disk writes, `mkfs`, fork bombs, `curl | sh`, `git push --force` (`--force-with-lease` stays allowed), remote branch deletion, `gh repo delete`, `gh auth token`, and password-manager CLIs. A match blocks the command before it runs.
+
+It handles three payload shapes, so the same file works as a Claude Code and Codex `PreToolUse` hook and as a Cursor `beforeShellExecution` hook (pass `cursor` as the first argument there).
+
+It fails open by design. No `jq`, no denylist, or an unreadable payload means allow, because a broken guard must not brick every agent on the machine. A missing denylist prints a warning to stderr so the failure is visible rather than silent.
+
+Tune it by editing the denylist. A line that fires on work you actually do is a bad line: narrow it or delete it, rather than teaching yourself to work around the guard.
 
 ## Verify hooks (trust but verify)
 
