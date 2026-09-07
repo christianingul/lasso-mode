@@ -1,7 +1,7 @@
 lasso-mode
 ==========
 
-lasso-mode is a derivative and aggregate work built on three MIT-licensed
+lasso-mode is a derivative and aggregate work built on four MIT-licensed
 open-source projects. Each is used under the terms of the MIT License.
 
 1. pstack
@@ -36,4 +36,21 @@ open-source projects. Each is used under the terms of the MIT License.
    Use:     Vendored verbatim into skills/stack/vercel-react-best-practices/
             (the react-best-practices skill: React and Next.js performance
             guidelines).
-</content>
+
+4. skills (David Ondrej)
+   Author:  David Ondrej
+   Source:  https://github.com/davidondrej/skills
+   Commit:  55bb353e9e25464e3f627ec8c48ece2ae83af559
+   Use:     Three adaptations. hooks/dangerous-patterns.txt is the denylist
+            from his dangerous-patterns.txt, taken close to verbatim with a
+            lasso-specific header. hooks/lasso-guard.sh is a rewrite of his
+            deny-dangerous.sh, keeping the multi-host payload handling and the
+            fail-open posture, adding install/check/test modes and symlink
+            resolution. hooks/test-guard.sh is his test harness, retargeted and
+            extended with a symlink regression test. skills/goal/ and
+            skills/git-worktree/ are rewritten from his goal-loop and
+            git-worktree skills: the contract shape, the reward-hacking
+            warning, and the worktree bootstrap checklist are his; the prose,
+            the principle cross-references, and the /loop-versus-/goal
+            distinction are lasso's.
+
