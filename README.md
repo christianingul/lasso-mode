@@ -146,7 +146,17 @@ It is `disable-model-invocation: true`, so it fires only when you call it. Examp
 /lasso-mode investigation: how does our checkpointer scope subgraph state?
 ```
 
-The model-invocable stack skills (`langgraph-fundamentals`, `nextjs`, `unslop`, and friends) and `/how`, `/why` can also be triggered on their own. `/lasso-mode` is the front door that orchestrates them.
+`/lasso-mode` is the front door, but most skills also fire on their own when the situation matches. Three groups:
+
+| Group | Behavior |
+|---|---|
+| The 20 `principle-*` skills, `tdd`, `show-me-your-work`, `blast-radius`, `how`, `why`, `unslop`, the stack skills | Fire on their own. Cheap, no fan-out. |
+| `architect`, `arena`, `interrogate`, `reflect`, `figure-it-out`, `recall` | Fire on their own, but gated. The harness asks before each run. |
+| `lasso-mode`, `setup-lasso`, `setup-lasso-verify`, `automate-me` | You type them. Front door and config. |
+
+The gate is a `permissions.ask` rule on `Skill(<name>)` in `settings.json`, written by `/setup-lasso`. It is enforced by the harness, not by a line of prose, so the model cannot talk itself past it. Run `/setup-lasso` with the gate off if you work unattended and nobody is there to answer the prompt.
+
+This split exists because `disable-model-invocation: true` is absolute: a blocked skill cannot be reached by the router at all, and the harness explicitly forbids working around it by reading the file. Anything `/lasso-mode` needs to route to has to be invocable. The gate is how the expensive ones stay under your control without being unreachable.
 
 ## MCP servers
 

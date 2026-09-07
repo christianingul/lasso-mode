@@ -1,6 +1,6 @@
 ---
 name: setup-lasso
-description: Pick which model each lasso role uses, asked in terms of the work (frontend, backend, docs, review, deep reasoning) rather than internal role names. Writes the model into the lasso agent files and the reasoning effort into settings. Use for /setup-lasso, "configure lasso models", or changing lasso's model choices.
+description: Pick which model each lasso role uses, asked in terms of the work (frontend, backend, docs, review, deep reasoning) rather than internal role names, and gate the skills that fan out to a panel. Writes the model into the lasso agent files, and the reasoning effort and permission gates into settings. Use for /setup-lasso, "configure lasso models", or changing lasso's model choices.
 disable-model-invocation: true
 ---
 
@@ -8,10 +8,11 @@ disable-model-invocation: true
 
 Ask the user which model to use for each kind of work, then write the answers where the harness reads them.
 
-Two outputs, because model and effort live in different places:
+Three outputs, because each setting lives somewhere different:
 
 - **Model** goes in each agent file's `model:` frontmatter, under `~/.claude/agents/` (or wherever `CLAUDE_HOME` points). Claude Code and Cursor both read that directory and both honor the field, so one write configures both.
 - **Effort** goes in `settings.json` under `modelSettings.<model>.effortLevel`. Agent frontmatter does not carry it.
+- **The cost gate** goes in `settings.json` under `permissions.ask`, so the harness prompts before a fan-out skill runs.
 
 ## Steps
 
@@ -75,6 +76,33 @@ Merge into `settings.json`, preserving every key already there:
 
 User settings (`~/.claude/settings.json`) unless the user asks for this project only.
 
-### 5. Confirm
+### 5. Gate the expensive skills
 
-Report which files changed, the model now on each role, and the effort. Tell the user to run `/reload-plugins` or restart so the agent files reload. On Cursor, the picker still applies to the main thread; these settings govern the subagents.
+Six skills fan out to a panel: `architect`, `arena`, `interrogate`, `reflect`, `figure-it-out`, `recall`. They are model-invocable so the router can reach them, and gated so the model cannot spend three opus agents without asking.
+
+The gate is a permission rule, not a line of prose the model can talk itself past. `ask` is a first-class permission behavior and `Skill(<name>)` is a valid specifier, so the harness stops and prompts before the skill runs.
+
+Merge into the same `settings.json`, preserving existing rules:
+
+```json
+{
+  "permissions": {
+    "ask": [
+      "Skill(architect)",
+      "Skill(arena)",
+      "Skill(interrogate)",
+      "Skill(reflect)",
+      "Skill(figure-it-out)",
+      "Skill(recall)"
+    ]
+  }
+}
+```
+
+Ask the user whether they want the gate before writing it. Someone running unattended (`/loop`, an autonomous run) may want these to proceed without a prompt, since nobody is at the keyboard to answer. Offer three options: gate all six (the default), gate none, or pick which.
+
+The cheap skills stay ungated. The 20 principles, `tdd`, `show-me-your-work`, and `blast-radius` spawn nothing, and a prompt for a 350-token read costs more attention than it saves.
+
+### 6. Confirm
+
+Report which files changed, the model now on each role, the effort, and which skills are gated. Tell the user to run `/reload-plugins` or restart so the agent files reload. On Cursor, the picker still applies to the main thread; these settings govern the subagents.

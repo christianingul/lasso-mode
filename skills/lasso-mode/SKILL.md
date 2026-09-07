@@ -104,6 +104,7 @@ Subagents are the largest cost in a run and the easiest to spend by accident. Th
 - **Count before you spawn.** Put the expected agent count in the opening todolist next to the throughput checkpoint. Crossing it mid-run is a checkpoint, not a silent continue.
 - **Say the number out loud in any skill that can fire without being asked.** `how`, `why`, and `swarm` are model-invocable, so the user did not choose to pay for them. Each states its agent count before spawning.
 - **A deterministic script beats fan-out.** If one pass of a codemod does the work, run it yourself (the **build-the-lever** principle skill).
+- **The panel skills are gated, and the gate is the user's.** `architect`, `arena`, `interrogate`, `reflect`, `figure-it-out` and `recall` sit behind a `permissions.ask` rule that `/setup-lasso` writes. Route to them normally. If the harness prompts, that is the design working; do not reroute around a decline by hand-rolling the panel yourself. Take the decline as an answer and carry on with the cheaper path.
 
 You own every subagent's work. Review the diff and write your own summary, don't pass through what it said. Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a "done" summary. A second opinion comes from a different model and a deliberately divergent rubric. The reviewer agent files carry both, so treat agreement across them as high-signal and a lone finding as worth reading but weaker.
 
