@@ -2,6 +2,7 @@
 name: lasso-agent-backend
 description: Backend code delegate for lasso-mode: services, APIs, data models, jobs, infrastructure code. Spawned by a playbook step when the task is backend-shaped.
 model: sonnet
+effort: high
 ---
 
 # Lasso backend delegate

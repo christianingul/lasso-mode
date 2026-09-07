@@ -11,7 +11,8 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 HOME = pathlib.Path(os.environ.get("CLAUDE_HOME", pathlib.Path.home() / ".claude"))
 GATED = ["architect", "arena", "interrogate", "reflect", "figure-it-out", "recall"]
 TYPED = {"lasso-mode", "setup-lasso", "setup-lasso-verify", "automate-me"}
-JUDGMENT = ["lasso-judge", "lasso-reviewer-a", "lasso-reviewer-b"]
+JUDGMENT = ["lasso-judge", "lasso-reviewer-a", "lasso-reviewer-b", "lasso-reviewer-c"]
+EFFORTS = {"low", "medium", "high", "xhigh"}
 VALID = {"opus", "sonnet", "haiku", "fable", "inherit"}
 
 results = []
@@ -44,6 +45,24 @@ for f in sorted((REPO / "agents").glob("*.md")):
 check("agent files installed", not missing, f"missing: {', '.join(missing)}")
 check("every agent pins a model", not unpinned, f"unpinned: {', '.join(unpinned)}")
 
+# Agents are copies, so personal config stays out of the repo and survives a
+# git checkout. A symlink here means an old install.
+linked = [f.name for f in sorted((HOME / "agents").glob("lasso-*.md")) if f.is_symlink()]
+check("agents are copies, not symlinks", not linked,
+      f"symlinked: {', '.join(linked)} — re-run ./install.sh")
+
+# Effort is per-role in the agent file. modelSettings would force one value on
+# every role sharing a model.
+no_effort, weak = [], []
+for f in sorted((HOME / "agents").glob("lasso-*.md")):
+    m = re.search(r"^effort:\s*(\S+)", f.read_text(), re.M)
+    if not m or m.group(1) not in EFFORTS:
+        no_effort.append(f.stem)
+    elif f.stem in JUDGMENT and m.group(1) != "xhigh":
+        weak.append(f"{f.stem}={m.group(1)}")
+check("every agent sets an effort", not no_effort, f"missing effort: {', '.join(no_effort)}")
+check("judgment roles run at xhigh", not weak, f"below xhigh: {', '.join(weak)}")
+
 # 3. Skill flags: only the four typed ones stay blocked.
 flagged = sorted(p.parent.name for p in (REPO / "skills").glob("*/SKILL.md")
                  if "disable-model-invocation" in p.read_text())
@@ -61,12 +80,6 @@ else:
         s = None; check("settings.json parses", False, str(e))
     if s is not None:
         check("settings.json parses", True)
-        ms = s.get("modelSettings", {})
-        check("an effort level is configured", bool(ms),
-              "no modelSettings — /setup-lasso step 4 has not run")
-        xhigh = [k for k, v in ms.items() if v.get("effortLevel") == "xhigh"]
-        check("a judgment model runs at xhigh", bool(xhigh),
-              "nothing at xhigh — the judge and reviewers will run at the default")
         ask = s.get("permissions", {}).get("ask", [])
         want = {f"Skill({g})" for g in GATED}
         have = want & set(ask)

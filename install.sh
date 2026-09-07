@@ -19,11 +19,25 @@ find "$REPO/skills" -name SKILL.md -print0 | while IFS= read -r -d '' skillmd; d
   echo "  /$name"
 done
 
-echo "Linking agents into $AGENTS_DEST"
+# Agents are COPIED, not symlinked. /setup-lasso writes your model and effort
+# choices into these files, and a symlink would put personal config in the repo
+# (and let a git checkout silently reset it). Existing files are left alone so
+# re-running the installer never clobbers your choices.
+echo "Copying agents into $AGENTS_DEST"
 for agent in "$REPO"/agents/*.md; do
   [ -e "$agent" ] || continue
-  ln -sfn "$agent" "$AGENTS_DEST/$(basename "$agent")"
-  echo "  $(basename "${agent%.md}")"
+  name="$(basename "$agent")"
+  dest="$AGENTS_DEST/$name"
+  if [ -L "$dest" ]; then
+    # Migrating from a previous symlink install.
+    rm "$dest"; cp "$agent" "$dest"; echo "  ${name%.md} (was a symlink, now a copy)"
+  elif [ ! -e "$dest" ]; then
+    cp "$agent" "$dest"; echo "  ${name%.md}"
+  elif cmp -s "$agent" "$dest"; then
+    echo "  ${name%.md} (unchanged)"
+  else
+    echo "  ${name%.md} (kept your version; run /setup-lasso to reconfigure)"
+  fi
 done
 
 HOOKS_DEST="$CLAUDE_HOME/hooks"

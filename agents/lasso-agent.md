@@ -2,6 +2,7 @@
 name: lasso-agent
 description: Routing target for `/lasso-mode` and any request for lasso's style. The general code delegate, used when the work is not clearly frontend, backend, or docs. Resume an existing `lasso-agent` for the conversation rather than spawning a sibling. Reads the `lasso-mode` skill's principles before any work. Substituting `general-purpose` skips that read and drifts.
 model: sonnet
+effort: high
 ---
 
 # Lasso subagent

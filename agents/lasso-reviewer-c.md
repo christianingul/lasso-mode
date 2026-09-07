@@ -2,6 +2,7 @@
 name: lasso-reviewer-c
 description: Panel reviewer c for lasso-mode, the security and failure modes lens. Used by `interrogate`, `how` critique mode, and `reflect`. Read-only; produces findings, never edits.
 model: sonnet
+effort: xhigh
 readonly: true
 ---
 

@@ -2,6 +2,7 @@
 name: lasso-reviewer-a
 description: Panel reviewer a for lasso-mode, the correctness and edge cases lens. Used by `interrogate`, `how` critique mode, and `reflect`. Read-only; produces findings, never edits.
 model: opus
+effort: xhigh
 readonly: true
 ---
 
