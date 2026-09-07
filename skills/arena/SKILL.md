@@ -25,7 +25,7 @@ The N candidates will receive the same prompt, so the prompt is the contract. Ge
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. Concrete: `Adds a --dry-run flag that skips writes`. Vague: `code is correct`. The rubric is the picker's tool in Phase D; candidates only see the task.
-3. Pick the runners. Each runner is a Claude agent (`subagent_type: "lasso-agent"`). Default panel is three runners across tiers (`opus`, `opus`, `sonnet`); override via `/setup-lasso`. Spawn more when the arena covers multiple design directions. Same tier N times is fine when the work is generation-bound rather than judgment-sensitive; the divergence then comes from independent attempts, not tier.
+3. Pick the runners. Three runners, matched to what the work touches: `lasso-agent-frontend`, `lasso-agent-backend`, `lasso-agent-docs`, or plain `lasso-agent` when the domain is mixed. Each file pins its own model, configured by `/setup-lasso`; don't pass a `model`. Three is the panel size and the maximum, per the **lasso-mode** skill's fan-out budget. Running the same agent three times is fine when the work is generation-bound rather than judgment-sensitive; the divergence then comes from independent attempts.
 4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`). N candidates writing to the same path is shared mutable state and fails the the **separate-before-serializing-shared-state** principle skill test.
 
 ## Phase B: Fan out
@@ -38,7 +38,7 @@ If a candidate fails to produce output, proceed with N-1 and note the dropout in
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, spawn one read-only judge (`subagent_type: "Explore"`) on a different tier from the parent (or with a deliberately divergent rubric framing). It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Spawning while candidates are still writing means the judge sees partial or empty outputs and reports them as dropouts.
+After all Phase B candidates complete, spawn one `lasso-judge` with a deliberately divergent rubric framing. It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Spawning while candidates are still writing means the judge sees partial or empty outputs and reports them as dropouts.
 
 ## Phase D: Pick a base
 

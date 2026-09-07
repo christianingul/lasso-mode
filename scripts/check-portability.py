@@ -46,7 +46,26 @@ for skill in sorted(ROOT.rglob("SKILL.md")):
         soft.append((folder, f"{p} referenced as bare path, not [link](./{p})"
                              + ("" if target.exists() else "  MISSING ON DISK")))
 
+# Agent files: both Claude Code and Cursor read these, and both key the model
+# off `model:`. A missing one means the role silently inherits the parent's model.
+AGENTS = ROOT.parent / "agents"
+for agent in sorted(AGENTS.glob("*.md")):
+    text = agent.read_text()
+    if not text.startswith("---\n"):
+        hard.append((agent.name, "no frontmatter")); continue
+    fm = text.split("---\n", 2)[1]
+    def field(k):
+        m = re.search(rf"^{k}:\s*(.+)$", fm, re.M)
+        return m.group(1).strip().strip('"\'') if m else None
+    if field("name") != agent.stem:
+        hard.append((agent.name, f"name '{field('name')}' != filename"))
+    if not field("model"):
+        hard.append((agent.name, "no model: — the role will inherit the parent's model"))
+    if not field("description"):
+        hard.append((agent.name, "no description"))
+
 for f, m in hard: print(f"FAIL  {f:<40} {m}")
 for f, m in soft: print(f"warn  {f:<40} {m}")
-print(f"\n{len(list(ROOT.rglob('SKILL.md')))} skills checked: {len(hard)} failures, {len(soft)} warnings")
+print(f"\n{len(list(ROOT.rglob('SKILL.md')))} skills + {len(list(AGENTS.glob('*.md')))} agents checked: "
+      f"{len(hard)} failures, {len(soft)} warnings")
 sys.exit(1 if hard else 0)

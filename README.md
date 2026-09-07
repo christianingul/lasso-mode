@@ -42,9 +42,11 @@ This is the part pstack doesn't have, and the reason lasso-mode exists for *your
 
 The ladder is one-directional. Skipping rung 1 to guess from weights is the exact failure mode the whole system exists to prevent. The map of technology to rungs lives in [`skills/lasso-mode/references/skills.md`](./skills/lasso-mode/references/skills.md).
 
-### 4. Diversity comes from divergent lenses, not different vendors
+### 4. Diversity comes from divergent lenses first, models second
 
-pstack's review panels (`interrogate`, `arena`, `how` critics) run several frontier models from different vendors to get adversarial diversity. Claude Code is single-provider, so lasso-mode reworks those panels: each reviewer is a Claude agent given a deliberately divergent lens (correctness, architecture, security) and a model tier (`opus`, `sonnet`, `haiku`). The signal comes from the conflict between lenses, and agreement across them is high-confidence.
+pstack's review panels (`interrogate`, `arena`, `how` critics) run several frontier models from different vendors to get adversarial diversity. Claude Code is single-provider, so lasso-mode leans on the lens: each reviewer gets a deliberately divergent angle (correctness, architecture, security) plus its own model. The signal comes from the conflict between lenses, and agreement across them is high-confidence.
+
+The model half lives in the `agents/` files rather than inside the skills, so it works on any host that reads agent frontmatter. On Cursor that means a panel can genuinely span vendors: point `lasso-reviewer-a` at Claude, `-b` at GPT, `-c` at Composer. On Claude Code it is the Anthropic tiers. Either way, `/setup-lasso` is where you choose.
 
 ---
 
@@ -181,9 +183,29 @@ That detects the project's checks (Node, Python, Rust, Go), merges a `Stop` hook
 
 Verification is project-scoped and opt-in, so it never fires on unrelated chats. The loop is bounded: the hook stops blocking once the diff stops changing or after `LASSO_MAX_ROUNDS` (default 3). A clean tree is a silent no-op. Edit `.claude/lasso-verify.conf` to add, drop, or retime checks. Keep them cheap and read-only. Never put a deploy or push in there.
 
-## Configure models
+## Models and cost
 
-Every agent here is Claude. Run `/setup-lasso` to override the per-role tier defaults (`opus` / `sonnet` / `haiku`); skills fall back to sensible defaults without it.
+Run `/setup-lasso`. It asks five questions about the work, not about internal role names, and writes the answers where the harness reads them.
+
+| Question | Agent file |
+|---|---|
+| Frontend work | `lasso-agent-frontend` |
+| Backend work | `lasso-agent-backend` |
+| Docs, prose, skill authoring | `lasso-agent-docs`, `lasso-agent` |
+| Code review and second opinions | `lasso-reviewer-a`, `-b`, `-c` |
+| Deep reasoning and synthesis | `lasso-judge`, `lasso-explorer` |
+
+The model lives in each file's `model:` frontmatter. Claude Code and Cursor both read `~/.claude/agents/` and both honor that field, so one answer configures both. Reasoning effort goes to `settings.json` under `modelSettings.<model>.effortLevel`, since agent frontmatter does not carry it. Judgment roles get `xhigh`; delegates stay at `high`.
+
+Haiku is off the Claude Code menu on purpose: it does not support `xhigh`, so it cannot do the work the reviewer and judge roles exist for.
+
+### What a run costs
+
+Subagents are the bulk of it. Every expensive panel is `disable-model-invocation: true`, so it only runs when you type it. Three skills can fire on their own and are the exception worth knowing about: `how` (up to 3 explorers plus a judge), `why` (one investigator per connected MCP category, up to 8), and `swarm` (one agent per row). Each states its agent count before spawning.
+
+The router caps the rest. Panels are three, and three is the maximum. A subagent never spawns its own panel, so depth stops at one. Runners read the principles rather than the whole router, which keeps ~1,600 tokens per agent out of the fan-out.
+
+Prices, per million tokens in / out: Fable 5.1 $10 / $50, Opus 5 $5 / $25, Sonnet 5 $2 / $10. `/setup-lasso` shows these next to each choice.
 
 ## License
 

@@ -13,6 +13,8 @@ metadata:
 **Requires** the `@langchain/quickjs` code interpreter with the `swarm_task` PTC
 tool. Without it, stop and say so rather than falling back to sequential work.
 
+`swarm` is model-invocable and fans out per row, so it can spend a lot without the user asking. **Say the row count and the resulting agent count before running.** If one deterministic pass over the rows would do the job, run that instead (the **build-the-lever** principle skill).
+
 Process many independent items in parallel. `create` builds a table handle;
 `run` fans work out across rows and merges results back. One row = one unit
 of work — swarm handles batching automatically.
