@@ -34,18 +34,17 @@ When in doubt, lean simple. You can always spawn explorers if the explainer hits
 
 ### Step 2a. Explore (complex questions only)
 
-Decompose the question into 2-4 parallel exploration angles, each a distinct slice of the subsystem so explorers don't duplicate work. Example split for "how does the rate limiter work?":
+Decompose the question into three parallel exploration angles, each a distinct slice of the subsystem so explorers don't duplicate work. Example split for "how does the rate limiter work?":
 
 - Explorer 1: data model and state management
 - Explorer 2: request path and enforcement
 - Explorer 3: configuration and metrics infrastructure
 
-The right decomposition depends on the question. Use your judgment. Narrow questions: 2 explorers is fine. Broad subsystems: up to 4.
+The right decomposition depends on the question. Narrow questions take two. Three is the maximum, per the **lasso-mode** skill's fan-out budget.
 
-Spawn all explorers in a single message:
+`how` is model-invocable, so it can fire without the user asking for it. **Say how many explorers you are about to spawn before you spawn them.**
 
-- `subagent_type`: `Explore` (read-only; cannot edit files)
-- `model`: your configured how-explorer model (default `sonnet`)
+Spawn all explorers in a single message with `subagent_type: lasso-explorer`. The agent file pins the model and the read-only flag; don't pass a `model`.
 
 Each explorer gets the same base prompt from [`references/explorer-prompt.md`](./references/explorer-prompt.md) plus a specific exploration angle naming its slice. Each explorer should:
 - Start broad: Glob for relevant directories, Grep for key types/interfaces/class names
@@ -60,10 +59,7 @@ Then proceed to Step 3.
 
 ### Step 2b. Direct Explain (simple questions)
 
-Spawn a single subagent that explores and explains in one pass:
-
-- `subagent_type`: `Explore` (read-only)
-- `model`: your configured how-explainer model (default `opus`)
+Spawn a single subagent that explores and explains in one pass, `subagent_type: lasso-judge`.
 
 The agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read [`references/explainer-prompt.md`](./references/explainer-prompt.md) for the communication style and output format. Same structure, just no explorer findings as input.
 
@@ -71,10 +67,7 @@ Proceed to Step 4.
 
 ### Step 3. Synthesize (complex questions only)
 
-Once all explorers return, spawn a single subagent to synthesize their findings into one coherent explanation:
-
-- `subagent_type`: `Explore` (read-only)
-- `model`: your configured how-explainer model (default `opus`)
+Once all explorers return, spawn one `lasso-judge` to synthesize their findings into a coherent explanation.
 
 The explainer gets all explorers' findings and writes the human-facing explanation (output format below). Read [`references/explainer-prompt.md`](./references/explainer-prompt.md) for the full prompt template. The explainer reconciles overlapping findings, resolves contradictions, and weaves the slices into a unified picture.
 
@@ -106,15 +99,15 @@ Run the full explain flow above (Steps 1-4). You must understand the architectur
 
 ### Step 2. Spawn Critics
 
-After the explanation is complete, spawn a panel of architectural critics in a single message. Each critic is a read-only Claude agent with a distinct lens and tier, so the divergence is deliberate rather than from different vendors. Default panel:
+After the explanation is complete, spawn the panel in a single message. Three critics, reusing the reviewer agents with an architecture framing:
 
-- Critic 1, **coupling & boundaries** lens, `model: opus`.
-- Critic 2, **failure modes & invariants** lens, `model: opus`.
-- Critic 3, **simplicity & reader load** lens, `model: sonnet`.
+| `subagent_type` | Lens for this pass |
+|---|---|
+| `lasso-reviewer-a` | coupling and boundaries |
+| `lasso-reviewer-b` | failure modes and invariants |
+| `lasso-reviewer-c` | simplicity and reader load |
 
-For each critic:
-- `subagent_type`: `Explore` (read-only)
-- `model`: the tier named for that lens. Escalate any critic to `opus` when the architecture warrants deeper analysis. Override the panel via `/setup-lasso`.
+Each file pins its own model. Don't pass a `model`; configure it with `/setup-lasso`.
 
 Read [`references/critic-prompt.md`](./references/critic-prompt.md) for the prompt template. Each critic gets:
 1. The explanation from Step 1 (so they don't re-explore)
@@ -123,12 +116,6 @@ Read [`references/critic-prompt.md`](./references/critic-prompt.md) for the prom
 
 ### Step 3. Lead Judgment
 
-Same framework as the interrogate skill. You're a pragmatic lead, not an aggregator.
-
-Categorize findings:
-- **Act on.** Architectural problems worth fixing now
-- **Consider.** Real concerns, but the cost/benefit is unclear
-- **Noted.** Valid observations, low priority
-- **Dismissed.** Wrong, missing context, or style preference
+Read [`../interrogate/references/lead-judgment.md`](../interrogate/references/lead-judgment.md) and apply it. It owns the framework: the four buckets, the filtering principles, and the posture. You're a pragmatic lead, not an aggregator. The critics saw an architecture through one lens each; you have the full context.
 
 Present the explanation first (from Step 1), then the critique verdict below it. The explanation should stand on its own; someone who just wants to understand the system shouldn't wade through critique.

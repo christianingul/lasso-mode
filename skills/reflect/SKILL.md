@@ -1,7 +1,6 @@
 ---
 name: reflect
 description: Spawn three parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect.
-disable-model-invocation: true
 ---
 
 # Reflect
@@ -22,29 +21,25 @@ Skip when the conversation is trivial, off-topic, or already covered by an exist
 
 ### 1. Locate the active transcript
 
-The parent finds its own transcript file before fanning out. Claude Code stores session transcripts at `~/.claude/projects/<slug>/<session-id>.jsonl`, where `<slug>` is the current working directory with the leading slash dropped and every `/` turned into `-` (so `/Users/you/proj` becomes `Users-you-proj`). Scope to this project's slug directory only; do not glob across `~/.claude/projects/*/`, which reads private chats from unrelated projects.
-
-```bash
-ls -t ~/.claude/projects/<slug>/*.jsonl 2>/dev/null | head -10
-```
-
-For each candidate, read the first JSONL line and check that its message text contains the conversation's opening user prompt. Take the matching path. If no path resolves, write a tight digest of the session and pass that instead.
+The parent finds its own transcript file before fanning out. Follow [reading session transcripts](../lasso-mode/references/transcripts.md) for the path rule, the listing command, and the cross-project fence. Match a candidate by checking that its first line contains this conversation's opening user prompt. If no path resolves, write a tight digest of the session and pass that instead.
 
 ### 2. Spawn three reviewers in parallel
 
-One message, three `Agent` calls, `subagent_type: general-purpose`, explicit `model:` on each. Use `general-purpose`, not `Explore`: reviewers may need MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript), and `Explore` strips MCP. The prompt forbids file writes; the parent applies edits. The three lenses are deliberately divergent, which is what gives the panel its signal within a single provider.
+One message, three `Agent` calls. Reviewers need MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript), which the read-only `lasso-reviewer-*` agents cannot do, so these run as `general-purpose` with the model named. The prompt forbids file writes; the parent applies edits. The three lenses are deliberately divergent, which is what gives the panel its signal.
 
-| Lens | `model` | Prompt template |
+| Lens | Model | Prompt template |
 |---|---|---|
-| Judgment | your configured reflect-judgment model (default `opus`) | [`references/judgment-reviewer.md`](./references/judgment-reviewer.md) |
-| Tooling | your configured reflect-tooling model (default `sonnet`) | [`references/tooling-reviewer.md`](./references/tooling-reviewer.md) |
-| Divergent | your configured reflect-judgment model (default `opus`) | [`references/divergent-reviewer.md`](./references/divergent-reviewer.md) |
+| Judgment | match `lasso-reviewer-a` | [`references/judgment-reviewer.md`](./references/judgment-reviewer.md) |
+| Tooling | match `lasso-reviewer-c` | [`references/tooling-reviewer.md`](./references/tooling-reviewer.md) |
+| Divergent | match `lasso-reviewer-b` | [`references/divergent-reviewer.md`](./references/divergent-reviewer.md) |
+
+Read the model out of each agent file rather than hardcoding one here, so `/setup-lasso` stays the single place that configures them.
 
 Pass each template verbatim, substituting the transcript path or digest where marked. Reviewers return findings in the `Agent` response body.
 
 ### 3. Synthesize
 
-One `Agent` call, `subagent_type: general-purpose` (not `Explore`; the citation spot-check can need MCP), using your configured reflect-judgment model (default `opus`). Use [`references/synthesizer.md`](./references/synthesizer.md) verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list.
+One `Agent` call, `subagent_type: general-purpose` (the citation spot-check can need MCP), on the model `lasso-judge` pins. Use [`references/synthesizer.md`](./references/synthesizer.md) verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list.
 
 ### 4. Structural enforcement check
 

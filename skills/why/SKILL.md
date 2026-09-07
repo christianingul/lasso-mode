@@ -115,9 +115,10 @@ Aim for a complete **coverage map**, not a minimal one. A null result from an is
 
 Launch all matching investigators in a single message so they run concurrently. One investigator per category lets each specialize in one tool's query vocabulary and result shape. Don't ask one agent to cover multiple MCPs.
 
+`why` is model-invocable, so it can fire without the user asking for it. **Before spawning, say how many categories are available and how many investigators you are launching.** The count scales with connected MCPs, so it is not obvious from the outside.
+
 Subagent config (each):
-- `subagent_type`: `general-purpose`. **Not `Explore`.** Explore agents cannot call MCP tools, which disables every MCP-backed investigator. `general-purpose` keeps MCP available.
-- `model`: your configured why-investigators model (default `sonnet`)
+- `subagent_type`: `lasso-explorer` for the source control investigator, which only needs git and `gh`. Every MCP-backed investigator needs `general-purpose` on the model `lasso-explorer` pins, because read-only agents cannot call MCP tools.
 - Investigators must not write files. That's a posture you state in the prompt, not a sandbox. The source control investigator only needs git and `gh`; keep it uniform with the rest anyway.
 
 Each investigator gets:
@@ -163,7 +164,7 @@ If your scope assessment suggests a single-commit trivial target where the PR de
 Spawn one synthesizer subagent:
 
 - `subagent_type`: `general-purpose` (not `Explore`; the synthesizer's citation spot-check can need MCP access, which Explore strips)
-- `model`: your configured why-synthesizer model (default `opus`)
+- `subagent_type`: `lasso-judge`. The agent file pins the model; don't pass one.
 
 The synthesizer gets:
 1. The investigator findings, including any null results and any categories skipped with justification

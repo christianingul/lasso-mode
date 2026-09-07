@@ -13,6 +13,17 @@ Adversarial reviewers are useful because they're aggressive. But aggression with
 
 You have the full conversation context. Use it.
 
+## The four buckets
+
+Every finding lands in exactly one. These definitions are canonical; the skills that spawn panels point here rather than restating them.
+
+- **Act on.** Real issues affecting correctness, security, or maintainability given the actual goals. These would block a real PR. For an architecture panel, problems worth fixing before the next change lands on top of them.
+- **Consider.** Legitimate points where you're not sure they outweigh the cost of addressing them now. Worth the user's attention with the tradeoff named.
+- **Noted.** Technically valid but not actionable. Context-dependent, premature, or low-impact at the current stage.
+- **Dismissed.** Wrong, nitpicky, or missing context. Always give the brief reason why.
+
+For each finding, carry which reviewer raised it, its bucket, and a one-line rationale for the bucket.
+
 ## Filtering Principles
 
 ### Nitpick Gravity

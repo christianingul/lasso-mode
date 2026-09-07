@@ -1,12 +1,11 @@
 ---
 name: interrogate
 description: "Use for \"interrogate\", \"adversarial review\", \"multi-agent review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". A panel of reviewers challenges changes from independent angles."
-disable-model-invocation: true
 ---
 
 # Interrogate
 
-Spawn a panel of reviewers to adversarially review code changes. Every reviewer is a Claude agent, so the diversity comes from two deliberate levers, not from different vendors: a different model tier (`opus` vs `sonnet`) and a divergent review lens assigned per reviewer. Each reviewer also applies the shared code-quality lens. Agreement across independent lenses is high-confidence signal; a lone-lens finding is worth reading but lower confidence.
+Spawn a panel of reviewers to adversarially review code changes. The diversity comes from two deliberate levers: a different model per reviewer and a divergent review lens. Both live in the `lasso-reviewer-*` agent files, so the spread survives on any host that reads agent frontmatter. Each reviewer also applies the shared code-quality lens. Agreement across independent lenses is high-confidence signal; a lone-lens finding is worth reading but lower confidence.
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
@@ -33,17 +32,15 @@ Write one clear paragraph. Reviewers challenge whether the work achieves the int
 
 ## Step 3, Spawn Reviewers
 
-Launch the panel in a single message. Default panel is three reviewers, each a read-only agent with a distinct lens and tier:
+Launch the panel in a single message. Three reviewers, one per lens:
 
-- Reviewer 1, **correctness & edge cases** lens, `model: opus`. Logic errors, boundary conditions, race conditions, error paths, whether the code does what the intent claims.
-- Reviewer 2, **architecture & maintainability** lens, `model: opus`. Boundaries, coupling, hidden state, reader load, whether the next engineer can extend this safely.
-- Reviewer 3, **security & failure modes** lens, `model: sonnet`. Untrusted input, auth, resource exhaustion, what happens under partial failure or retry.
+| `subagent_type` | Lens |
+|---|---|
+| `lasso-reviewer-a` | correctness and edge cases |
+| `lasso-reviewer-b` | architecture and maintainability |
+| `lasso-reviewer-c` | security and failure modes |
 
-For each reviewer:
-- `subagent_type`: `Explore` (read-only review needs no edits or MCP; if a reviewer must consult an MCP source, use `general-purpose` instead)
-- `model`: the tier named for that lens (override via `/setup-lasso`)
-
-Valid `model` values are `opus`, `sonnet`, `haiku`, `fable`. If a value is rejected, fall back to `opus` and continue; don't block the review.
+Each agent file pins its own model and read-only flag. Do not pass a `model`; configure it with `/setup-lasso`. Three is the panel size and the maximum, per the **lasso-mode** skill's fan-out budget. If a reviewer must consult an MCP source, use `general-purpose` for that one and say why.
 
 Read [`references/reviewer-prompt.md`](./references/reviewer-prompt.md) and fill in the template for each reviewer with:
 1. The stated intent
@@ -70,19 +67,7 @@ As results come back, build a unified picture:
 
 You are the lead reviewer, a pragmatic senior engineer, not a neutral aggregator.
 
-Read [`references/lead-judgment.md`](./references/lead-judgment.md) for the full framework. Reviewers only see a slice of the codebase. You have the full context (the goal, the constraints, the timeline, which tradeoffs were already considered). Use that context aggressively.
-
-Categorize every finding using these buckets:
-
-- **Act on**. Real issues affecting correctness, security, or maintainability given the actual goals. These would block a real PR.
-- **Consider**. Legitimate points, but you're not sure they outweigh the cost of addressing them right now. Worth the user's attention.
-- **Noted**. Technically valid but not actionable. Context-dependent, premature optimization, or low-impact given the current stage.
-- **Dismissed**. Wrong, nitpicky, or missing context. Brief explanation why.
-
-For each finding, include:
-- Which reviewer(s) raised it
-- The category (act on / consider / noted / dismissed)
-- A one-line rationale for the categorization
+Read [`references/lead-judgment.md`](./references/lead-judgment.md) and apply it. It owns the four buckets and the filtering principles. Reviewers only see a slice of the codebase. You have the full context (the goal, the constraints, the timeline, which tradeoffs were already considered). Use that context aggressively.
 
 ## Output Format
 
@@ -92,7 +77,7 @@ Present the verdict in this structure:
 > [The stated intent paragraph from Step 2]
 
 ### Reviewers
-List each reviewer on its own line like `- <lens> (<tier>): [N findings]`
+List each reviewer on its own line like `- <lens> (<model>): [N findings]`
 
 ### Act On
 [Findings that should be addressed. For each: description, which reviewers raised it, why it matters.]

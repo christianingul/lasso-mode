@@ -42,9 +42,11 @@ This is the part pstack doesn't have, and the reason lasso-mode exists for *your
 
 The ladder is one-directional. Skipping rung 1 to guess from weights is the exact failure mode the whole system exists to prevent. The map of technology to rungs lives in [`skills/lasso-mode/references/skills.md`](./skills/lasso-mode/references/skills.md).
 
-### 4. Diversity comes from divergent lenses, not different vendors
+### 4. Diversity comes from divergent lenses first, models second
 
-pstack's review panels (`interrogate`, `arena`, `how` critics) run several frontier models from different vendors to get adversarial diversity. Claude Code is single-provider, so lasso-mode reworks those panels: each reviewer is a Claude agent given a deliberately divergent lens (correctness, architecture, security) and a model tier (`opus`, `sonnet`, `haiku`). The signal comes from the conflict between lenses, and agreement across them is high-confidence.
+pstack's review panels (`interrogate`, `arena`, `how` critics) run several frontier models from different vendors to get adversarial diversity. Claude Code is single-provider, so lasso-mode leans on the lens: each reviewer gets a deliberately divergent angle (correctness, architecture, security) plus its own model. The signal comes from the conflict between lenses, and agreement across them is high-confidence.
+
+The model half lives in the `agents/` files rather than inside the skills, so it works on any host that reads agent frontmatter. On Cursor that means a panel can genuinely span vendors: point `lasso-reviewer-a` at Claude, `-b` at GPT, `-c` at Composer. On Claude Code it is the Anthropic tiers. Either way, `/setup-lasso` is where you choose.
 
 ---
 
@@ -56,10 +58,11 @@ pstack's review panels (`interrogate`, `arena`, `how` critics) run several front
 ├─ Playbooks ................... 16 step-by-step procedures, one per task type
 │   investigation · bug-fix · perf · hillclimb · feature · refactoring
 │   prototype · visual-parity · forensics · eval · autonomous-run
-│   session-pickup · pause-safely · multi-phase · authoring-a-skill · opening-a-pr
+│   session-pickup · pause-safely · authoring-a-skill · opening-a-pr
 ├─ Workflow skills ............. how · why · architect · arena · interrogate
 │   tdd · reflect · unslop · recall · blast-radius · figure-it-out
-│   show-me-your-work · automate-me · typescript-best-practices · setup-lasso
+│   show-me-your-work · automate-me · typescript-best-practices
+│   setup-lasso · setup-lasso-verify
 └─ Stack index (skills.md) ..... the escalation ladder
     ├─ Source skills (skills/stack/) → vendored author skills + thin pointers
     └─ MCP servers (.mcp.json) ... mcpdoc · context7 · langfuse
@@ -143,7 +146,17 @@ It is `disable-model-invocation: true`, so it fires only when you call it. Examp
 /lasso-mode investigation: how does our checkpointer scope subgraph state?
 ```
 
-The model-invocable stack skills (`langgraph-fundamentals`, `nextjs`, `unslop`, and friends) and `/how`, `/why` can also be triggered on their own. `/lasso-mode` is the front door that orchestrates them.
+`/lasso-mode` is the front door, but most skills also fire on their own when the situation matches. Three groups:
+
+| Group | Behavior |
+|---|---|
+| The 20 `principle-*` skills, `tdd`, `show-me-your-work`, `blast-radius`, `how`, `why`, `unslop`, the stack skills | Fire on their own. Cheap, no fan-out. |
+| `architect`, `arena`, `interrogate`, `reflect`, `figure-it-out`, `recall` | Fire on their own, but gated. The harness asks before each run. |
+| `lasso-mode`, `setup-lasso`, `setup-lasso-verify`, `automate-me` | You type them. Front door and config. |
+
+The gate is a `permissions.ask` rule on `Skill(<name>)` in `settings.json`, written by `/setup-lasso`. It is enforced by the harness, not by a line of prose, so the model cannot talk itself past it. Run `/setup-lasso` with the gate off if you work unattended and nobody is there to answer the prompt.
+
+This split exists because `disable-model-invocation: true` is absolute: a blocked skill cannot be reached by the router at all, and the harness explicitly forbids working around it by reading the file. Anything `/lasso-mode` needs to route to has to be invocable. The gate is how the expensive ones stay under your control without being unreachable.
 
 ## MCP servers
 
@@ -180,9 +193,29 @@ That detects the project's checks (Node, Python, Rust, Go), merges a `Stop` hook
 
 Verification is project-scoped and opt-in, so it never fires on unrelated chats. The loop is bounded: the hook stops blocking once the diff stops changing or after `LASSO_MAX_ROUNDS` (default 3). A clean tree is a silent no-op. Edit `.claude/lasso-verify.conf` to add, drop, or retime checks. Keep them cheap and read-only. Never put a deploy or push in there.
 
-## Configure models
+## Models and cost
 
-Every agent here is Claude. Run `/setup-lasso` to override the per-role tier defaults (`opus` / `sonnet` / `haiku`); skills fall back to sensible defaults without it.
+Run `/setup-lasso`. It asks five questions about the work, not about internal role names, and writes the answers where the harness reads them.
+
+| Question | Agent file |
+|---|---|
+| Frontend work | `lasso-agent-frontend` |
+| Backend work | `lasso-agent-backend` |
+| Docs, prose, skill authoring | `lasso-agent-docs`, `lasso-agent` |
+| Code review and second opinions | `lasso-reviewer-a`, `-b`, `-c` |
+| Deep reasoning and synthesis | `lasso-judge`, `lasso-explorer` |
+
+The model lives in each file's `model:` frontmatter. Claude Code and Cursor both read `~/.claude/agents/` and both honor that field, so one answer configures both. Reasoning effort goes to `settings.json` under `modelSettings.<model>.effortLevel`, since agent frontmatter does not carry it. Judgment roles get `xhigh`; delegates stay at `high`.
+
+Haiku is off the Claude Code menu on purpose: it does not support `xhigh`, so it cannot do the work the reviewer and judge roles exist for.
+
+### What a run costs
+
+Subagents are the bulk of it. Every expensive panel is `disable-model-invocation: true`, so it only runs when you type it. Three skills can fire on their own and are the exception worth knowing about: `how` (up to 3 explorers plus a judge), `why` (one investigator per connected MCP category, up to 8), and `swarm` (one agent per row). Each states its agent count before spawning.
+
+The router caps the rest. Panels are three, and three is the maximum. A subagent never spawns its own panel, so depth stops at one. Runners read the principles rather than the whole router, which keeps ~1,600 tokens per agent out of the fan-out.
+
+Prices, per million tokens in / out: Fable 5.1 $10 / $50, Opus 5 $5 / $25, Sonnet 5 $2 / $10. `/setup-lasso` shows these next to each choice.
 
 ## License
 

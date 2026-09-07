@@ -1,7 +1,6 @@
 ---
 name: architect
 description: "Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for /architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape."
-disable-model-invocation: true
 ---
 
 # Architect
@@ -30,7 +29,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass [`references/runner-prompt.md`](./references/runner-prompt.md) as each runner's prompt. Each candidate produces a design package shaped per [`references/rationale-template.md`](./references/rationale-template.md): the caller's usage written first, then the type sketch, function signatures, module map, and prose rationale derived from it.
 
-Use your configured architect runners (defaults `opus`, `opus`, `sonnet`).
+Arena picks the runner agents by what the design touches; `/setup-lasso` configures their models.
 
 This is the **exhaust-the-design-space** principle skill made concrete. Whole-shape alternatives, not point fixes inside one shape.
 

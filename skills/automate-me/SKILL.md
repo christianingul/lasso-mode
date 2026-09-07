@@ -26,7 +26,7 @@ Update mode changes the rest of the flow:
 
 ### 1. Mine their history
 
-Locate this project's transcripts before fanning out. They live at `~/.claude/projects/<slug>/<session-id>.jsonl`, where `<slug>` is the current working directory with the leading slash dropped and each "/" turned into "-". Use only this project's slug directory. Don't glob across `~/.claude/projects/*/`. That crosses project boundaries and reads private chats from unrelated projects.
+Locate this project's transcripts before fanning out. Follow [reading session transcripts](../lasso-mode/references/transcripts.md) for the path rule and the cross-project fence.
 
 Survey recent agent conversations within that scope for recurring patterns. Run multiple parallel subagents across slices of history (e.g. last 2-4 weeks, split into 3 slices so each has enough material). Each slice mining subagent reads transcripts from the workspace-scoped path the parent provides, looks for the signals below, and returns a short structured list of patterns it saw with evidence pointers. Default signals worth hunting:
 

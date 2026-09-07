@@ -79,11 +79,34 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 ## Subagents
 
-**Use `subagent_type: "lasso-agent"` for any code-writing subagent you spawn inside a playbook step** (implementation delegates, ad-hoc helpers). `/lasso-mode` and `lasso-agent` route through the same wrapper. For read-only fan-out (exploration, review, investigation) use `subagent_type: "Explore"`, which cannot edit files or call MCP tools. Routed workflow skills (`how`, `why`, `interrogate`, `reflect`) set their own subagent type and panel shape; respect what the skill prescribes, don't override to `lasso-agent`.
+**Pick the agent file, not the model.** Each role has an agent under `agents/` that pins its own model, so the choice survives on any host that reads agent frontmatter. Never pass a `model` yourself; the file owns it and `/setup-lasso` configures it.
 
-**Defaults for every `Agent` call.** `run_in_background: true`, file pointers not inlined context, explicit `model` per role (configurable via `/setup-lasso`; defaults `sonnet` for code, `opus` for prose and judgment; `haiku` for cheap mechanical work). Read-only work that needs no MCP goes to `Explore`; work that writes files or needs MCP goes to `lasso-agent` or `general-purpose`.
+| Work | `subagent_type` |
+|---|---|
+| Frontend code | `lasso-agent-frontend` |
+| Backend code | `lasso-agent-backend` |
+| Docs, prose, skill authoring | `lasso-agent-docs` |
+| Code, domain unclear | `lasso-agent` |
+| Read-only exploration | `lasso-explorer` |
+| Synthesis, judgment, the human-facing answer | `lasso-judge` |
+| Panel review, three lenses | `lasso-reviewer-a`, `-b`, `-c` |
 
-You own every subagent's work. Review the diff and write your own summary, don't pass through what it said. Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a "done" summary. Since every agent here is a Claude model, a second opinion comes from a different tier (`opus` vs `sonnet`) or a deliberately divergent rubric, not a different vendor. Run the panel that way and treat agreement across divergent framings as high-signal.
+Routed workflow skills (`how`, `why`, `interrogate`, `reflect`) name their own agents; respect what the skill prescribes. Where a task needs MCP and the pinned agent is read-only, use `general-purpose` and say why.
+
+**Defaults for every `Agent` call.** `run_in_background: true`, file pointers not inlined context.
+
+## Fan-out budget
+
+Subagents are the largest cost in a run and the easiest to spend by accident. These are limits, not preferences.
+
+- **Depth 1.** A subagent never spawns a panel. An `arena` runner implements; it does not run its own `arena`, `how`, or `interrogate`. If a delegate thinks it needs a panel, it says so and returns; the parent decides.
+- **Three is the panel size and the panel maximum.** Not "2-4, use judgment". Scale past three only when the user asks for it.
+- **Count before you spawn.** Put the expected agent count in the opening todolist next to the throughput checkpoint. Crossing it mid-run is a checkpoint, not a silent continue.
+- **Say the number out loud in any skill that can fire without being asked.** `how`, `why`, and `swarm` are model-invocable, so the user did not choose to pay for them. Each states its agent count before spawning.
+- **A deterministic script beats fan-out.** If one pass of a codemod does the work, run it yourself (the **build-the-lever** principle skill).
+- **The panel skills are gated, and the gate is the user's.** `architect`, `arena`, `interrogate`, `reflect`, `figure-it-out` and `recall` sit behind a `permissions.ask` rule that `/setup-lasso` writes. Route to them normally. If the harness prompts, that is the design working; do not reroute around a decline by hand-rolling the panel yourself. Take the decline as an answer and carry on with the cheaper path.
+
+You own every subagent's work. Review the diff and write your own summary, don't pass through what it said. Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a "done" summary. A second opinion comes from a different model and a deliberately divergent rubric. The reviewer agent files carry both, so treat agreement across them as high-signal and a lone finding as worth reading but weaker.
 
 ## Writing the reply
 
@@ -123,5 +146,5 @@ A large or cross-cutting effort (a migration across many call sites, an ambitiou
 - **Autonomous run.** A long task to drive to completion without stopping ("run until done", "/loop until X"). [`playbooks/autonomous-run.md`](./playbooks/autonomous-run.md).
 - **Session pickup.** Resuming or taking over a prior agent's in-flight work from a transcript, cloud-agent URL, or pushed branch. [`playbooks/session-pickup.md`](./playbooks/session-pickup.md).
 - **Pause safely.** Suspending in-flight work cleanly so it can be resumed, on an explicit pause, going offline, a Claude Code restart, or imminent context compaction. The complement to Session pickup. Full steps: [`playbooks/pause-safely.md`](./playbooks/pause-safely.md).
-- **Multi-phase or multi-PR plan.** Work that spans phases or stacked PRs. [`playbooks/multi-phase-plan.md`](./playbooks/multi-phase-plan.md).
+- **Multi-phase or multi-PR plan.** Work that spans phases or stacked PRs. [`references/plan.md`](./references/plan.md).
 - **Opening a PR.** Invoked at the end of every other playbook. [`playbooks/opening-a-pr.md`](./playbooks/opening-a-pr.md).

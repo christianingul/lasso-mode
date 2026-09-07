@@ -1,51 +1,108 @@
 ---
 name: setup-lasso
-description: Configure which Claude model tier lasso uses per role. Writes an override file that the lasso skills read, falling back to their inline defaults. Use for /setup-lasso, "configure lasso models", or changing lasso's model choices.
+description: Pick which model each lasso role uses, asked in terms of the work (frontend, backend, docs, review, deep reasoning) rather than internal role names, and gate the skills that fan out to a panel. Writes the model into the lasso agent files, and the reasoning effort and permission gates into settings. Use for /setup-lasso, "configure lasso models", or changing lasso's model choices.
 disable-model-invocation: true
 ---
 
 # Setup lasso
 
-Write `~/.claude/skills/lasso-mode/references/models.md`, an override file mapping each lasso role to a Claude model tier. The skills read it when present and fall back to their inline defaults when a line is absent, so this is an override layer, not a requirement. Every lasso agent is a Claude model, so the only knob is the tier.
+Ask the user which model to use for each kind of work, then write the answers where the harness reads them.
+
+Three outputs, because each setting lives somewhere different:
+
+- **Model** goes in each agent file's `model:` frontmatter, under `~/.claude/agents/` (or wherever `CLAUDE_HOME` points). Claude Code and Cursor both read that directory and both honor the field, so one write configures both.
+- **Effort** goes in `settings.json` under `modelSettings.<model>.effortLevel`. Agent frontmatter does not carry it.
+- **The cost gate** goes in `settings.json` under `permissions.ask`, so the harness prompts before a fan-out skill runs.
 
 ## Steps
 
-### 1. Know the available tiers
+### 1. Detect the host and build the model menu
 
-Claude Code accepts these `model` values on an `Agent` call: `opus`, `sonnet`, `haiku`, `fable` (plus inherit). That is the whole set. Do not write a value outside it. If a value is ever rejected at spawn time, fall back to `opus` and continue; never block work on the config.
+Check for `~/.cursor/`. If it exists, the user may be running lasso in Cursor too, so ask which host they are configuring and offer that host's models.
 
-### 2. Load current state
+**Claude Code.** Three options. Haiku is deliberately absent: it does not support `xhigh` effort, so it cannot do the work lasso reserves reasoning for.
 
-The default role-to-tier mapping is the shape shown in step 4. If `~/.claude/skills/lasso-mode/references/models.md` already exists, read it and treat its values as the current choices. Otherwise start from those defaults.
+| Option | Price per MTok in / out |
+|---|---|
+| `opus` (Claude Opus 5) | $5 / $25 |
+| `sonnet` (Claude Sonnet 5) | $2 / $10 |
+| `fable` (Claude Fable 5.1) | $10 / $50 |
 
-### 3. Confirm with the user
+The aliases already resolve to the newest model in each family. Never write a dated ID.
 
-Show every role with its current tier. Ask whether to accept as-is or change specific roles, offering `opus` / `sonnet` / `haiku` as the options. Prefer `AskUserQuestion` over free text. For panel roles (how critics, arena runners, architect runners, interrogate reviewers) the value is a list, and one agent runs per entry, so the list length sets the panel size. Remember the panels get their diversity from divergent lenses, not different vendors, so it is fine for entries to repeat a tier.
+**Cursor.** Do not guess a roster. Ask the user which models their plan includes, or read what the picker offers, and use those IDs verbatim (`composer-2`, `gpt-5.6-sol`, `claude-opus-5`). Cursor also accepts inline parameters, so `claude-opus-5[effort=xhigh]` sets effort in the same field.
 
-### 4. Write the override file
+Show the price column next to every option. The point of the ask is that the user can see what each choice costs.
 
-Overwrite the whole file so re-runs stay idempotent. Shape:
+### 2. Ask in terms of the work
 
-```markdown
-# lasso model configuration. One line per role. Delete a line to fall back to the skill default.
-# Valid tiers: opus, sonnet, haiku, fable.
-feature, refactoring: sonnet
-bug-fix: opus
-perf-issue: opus
-hillclimb: opus
-judgment and prose: opus
-how explorer: sonnet
-how explainer: opus
-how critics: opus, opus, sonnet
-why investigators: sonnet
-why synthesizer: opus
-reflect tooling: sonnet
-reflect judgment, divergent, synthesizer: opus
-arena runners: opus, opus, sonnet
-architect runners: opus, opus, sonnet
-interrogate reviewers: opus, opus, sonnet
+Five questions via `AskUserQuestion`, one round. Do not walk the internal role list; nobody thinks in "how-explainer".
+
+| Question | Writes |
+|---|---|
+| "Which model for frontend work?" | `lasso-agent-frontend.md` |
+| "For backend work?" | `lasso-agent-backend.md` |
+| "For docs, prose, and skill authoring?" | `lasso-agent-docs.md`, `lasso-agent.md` |
+| "For code review and second opinions?" | `lasso-reviewer-a.md`, `-b.md`, `-c.md` |
+| "For deep reasoning and synthesis?" | `lasso-judge.md`, `lasso-explorer.md` |
+
+On the review question, offer a spread rather than one model. The panel earns its cost by disagreeing, and three copies of one model agree with themselves. Default spread is the strongest model twice plus a cheaper third. If the user picks a single model for all three, take it, and tell them once what they gave up.
+
+If the user declines to answer, keep the current value. Never silently substitute a default for a question they skipped.
+
+### 3. Write the agent files
+
+Edit only the `model:` line in each file's frontmatter. Leave the body alone; it holds the role's instructions and the depth cap. Re-running this skill overwrites the same line, so it stays idempotent.
+
+If an agent file is missing, the install is incomplete. Say so and point at `./install.sh` rather than creating a partial one.
+
+### 4. Write the effort setting
+
+Effort is `low`, `medium`, `high`, `xhigh`, or `max`. Default is `high`.
+
+Set `xhigh` for the judgment models, the reviewers and `lasso-judge`, where deeper reasoning is the whole point. Leave mechanical delegates at `high`. Reserve `max` for a specific hard problem the user names; Claude Code's own guidance is that it may burn tokens without improving the answer.
+
+`xhigh` runs on Fable 5, Opus 4.7 and later, and Sonnet 5. If a chosen model does not support it, the setting is ignored and effort falls back to `high`. Say so rather than writing a line that does nothing.
+
+Merge into `settings.json`, preserving every key already there:
+
+```json
+{
+  "modelSettings": {
+    "claude-opus-5": { "effortLevel": "xhigh" }
+  }
+}
 ```
 
-### 5. Confirm
+User settings (`~/.claude/settings.json`) unless the user asks for this project only.
 
-Tell the user the file was written and that skills pick it up on their next run. Re-running this skill updates it.
+### 5. Gate the expensive skills
+
+Six skills fan out to a panel: `architect`, `arena`, `interrogate`, `reflect`, `figure-it-out`, `recall`. They are model-invocable so the router can reach them, and gated so the model cannot spend three opus agents without asking.
+
+The gate is a permission rule, not a line of prose the model can talk itself past. `ask` is a first-class permission behavior and `Skill(<name>)` is a valid specifier, so the harness stops and prompts before the skill runs.
+
+Merge into the same `settings.json`, preserving existing rules:
+
+```json
+{
+  "permissions": {
+    "ask": [
+      "Skill(architect)",
+      "Skill(arena)",
+      "Skill(interrogate)",
+      "Skill(reflect)",
+      "Skill(figure-it-out)",
+      "Skill(recall)"
+    ]
+  }
+}
+```
+
+Ask the user whether they want the gate before writing it. Someone running unattended (`/loop`, an autonomous run) may want these to proceed without a prompt, since nobody is at the keyboard to answer. Offer three options: gate all six (the default), gate none, or pick which.
+
+The cheap skills stay ungated. The 20 principles, `tdd`, `show-me-your-work`, and `blast-radius` spawn nothing, and a prompt for a 350-token read costs more attention than it saves.
+
+### 6. Confirm
+
+Report which files changed, the model now on each role, the effort, and which skills are gated. Tell the user to run `/reload-plugins` or restart so the agent files reload. On Cursor, the picker still applies to the main thread; these settings govern the subagents.
