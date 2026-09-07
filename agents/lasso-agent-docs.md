@@ -2,6 +2,7 @@
 name: lasso-agent-docs
 description: Docs and prose delegate for lasso-mode: READMEs, skill authoring, comments, changelogs, PR descriptions. Spawned when the deliverable is writing rather than code.
 model: sonnet
+effort: high
 ---
 
 # Lasso docs delegate

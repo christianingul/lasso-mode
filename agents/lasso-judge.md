@@ -2,6 +2,7 @@
 name: lasso-judge
 description: Synthesis and judgment for lasso-mode. Used by the `how` explainer, the `why` synthesizer, the `arena` cross-judge, and any step that weighs evidence or writes the human-facing answer. Reasoning-heavy by design.
 model: opus
+effort: xhigh
 ---
 
 # Lasso judge

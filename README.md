@@ -205,7 +205,11 @@ Run `/setup-lasso`. It asks five questions about the work, not about internal ro
 | Code review and second opinions | `lasso-reviewer-a`, `-b`, `-c` |
 | Deep reasoning and synthesis | `lasso-judge`, `lasso-explorer` |
 
-The model lives in each file's `model:` frontmatter. Claude Code and Cursor both read `~/.claude/agents/` and both honor that field, so one answer configures both. Reasoning effort goes to `settings.json` under `modelSettings.<model>.effortLevel`, since agent frontmatter does not carry it. Judgment roles get `xhigh`; delegates stay at `high`.
+Model and reasoning level both live in each agent file, as `model:` and `effort:` frontmatter. Claude Code and Cursor both read `~/.claude/agents/` and both honor those fields, so one answer configures both hosts. Keeping them together is what makes them per-role: `sonnet` can run a reviewer at `xhigh` and an explorer at `high` at the same time, which `settings.json` `modelSettings` cannot express because it keys on the model.
+
+Judgment roles (`lasso-judge`, the three reviewers) get `xhigh`. Delegates and `lasso-explorer` stay at `high` — explorers are the most-spawned role, so their effort moves the bill more than any other single setting.
+
+`install.sh` copies the agent files rather than symlinking them, so your choices are yours: a `git checkout` in this repo cannot reset them, and re-running the installer leaves a customized file alone. Skills stay symlinked, so editing the repo still takes effect live.
 
 Haiku is off the Claude Code menu on purpose: it does not support `xhigh`, so it cannot do the work the reviewer and judge roles exist for.
 

@@ -2,6 +2,7 @@
 name: lasso-reviewer-b
 description: Panel reviewer b for lasso-mode, the architecture and maintainability lens. Used by `interrogate`, `how` critique mode, and `reflect`. Read-only; produces findings, never edits.
 model: opus
+effort: xhigh
 readonly: true
 ---
 

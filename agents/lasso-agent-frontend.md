@@ -2,6 +2,7 @@
 name: lasso-agent-frontend
 description: Frontend code delegate for lasso-mode: UI, components, styling, client-side state, visual work. Spawned by a playbook step when the task is frontend-shaped.
 model: sonnet
+effort: high
 ---
 
 # Lasso frontend delegate

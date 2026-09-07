@@ -2,6 +2,7 @@
 name: lasso-explorer
 description: Read-only exploration for lasso-mode. Used by `how` explorers, `why` investigators, and any read-only fan-out. Traces call chains and reports findings; never edits files.
 model: sonnet
+effort: high
 readonly: true
 ---
 

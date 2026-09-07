@@ -10,9 +10,10 @@ Ask the user which model to use for each kind of work, then write the answers wh
 
 Three outputs, because each setting lives somewhere different:
 
-- **Model** goes in each agent file's `model:` frontmatter, under `~/.claude/agents/` (or wherever `CLAUDE_HOME` points). Claude Code and Cursor both read that directory and both honor the field, so one write configures both.
-- **Effort** goes in `settings.json` under `modelSettings.<model>.effortLevel`. Agent frontmatter does not carry it.
+- **Model and effort** both go in each agent file, as `model:` and `effort:` frontmatter, under `~/.claude/agents/` (or wherever `CLAUDE_HOME` points). Keeping them together is what makes them per-role: one model can serve a reviewer at `xhigh` and an explorer at `high` without collision.
 - **The cost gate** goes in `settings.json` under `permissions.ask`, so the harness prompts before a fan-out skill runs.
+
+`install.sh` copies the agent files rather than symlinking them, so what you set here is yours and a `git checkout` in the repo cannot reset it. Re-running the installer leaves a customized file alone.
 
 ## Steps
 
@@ -36,7 +37,9 @@ Show the price column next to every option. The point of the ask is that the use
 
 ### 2. Ask in terms of the work
 
-Five questions via `AskUserQuestion`, one round. Do not walk the internal role list; nobody thinks in "how-explainer".
+Five questions, each covering one kind of work. `AskUserQuestion` takes at most four per call, so this is two rounds. Do not walk the internal role list; nobody thinks in "how-explainer".
+
+Ask for **model and reasoning level together**, as one choice per question. They are the same decision from the user's side ("how much do I want spent on this kind of work"), and splitting them doubles the questions for no benefit. Offer three shapes per question and name the price: cheap (`sonnet` at `high`), strong (`opus` at `xhigh`), strongest (`fable` at `xhigh`).
 
 | Question | Writes |
 |---|---|
@@ -56,25 +59,15 @@ Edit only the `model:` line in each file's frontmatter. Leave the body alone; it
 
 If an agent file is missing, the install is incomplete. Say so and point at `./install.sh` rather than creating a partial one.
 
-### 4. Write the effort setting
+### 4. Write the effort line
 
-Effort is `low`, `medium`, `high`, `xhigh`, or `max`. Default is `high`.
+`effort:` sits in the same agent frontmatter as `model:`, so step 3 already wrote it. Values are `low`, `medium`, `high`, `xhigh`. Default is `high`.
 
-Set `xhigh` for the judgment models, the reviewers and `lasso-judge`, where deeper reasoning is the whole point. Leave mechanical delegates at `high`. Reserve `max` for a specific hard problem the user names; Claude Code's own guidance is that it may burn tokens without improving the answer.
+Give `xhigh` to the roles whose job is reasoning: `lasso-judge` and the three reviewers. Leave delegates and `lasso-explorer` at `high`. Explorers are the most-spawned role, so their effort moves the bill more than anything else on the list.
 
-`xhigh` runs on Fable 5, Opus 4.7 and later, and Sonnet 5. If a chosen model does not support it, the setting is ignored and effort falls back to `high`. Say so rather than writing a line that does nothing.
+`xhigh` runs on Fable 5, Opus 4.7 and later, and Sonnet 5. A model that does not support it silently falls back to `high`, so say so rather than writing a line that does nothing.
 
-Merge into `settings.json`, preserving every key already there:
-
-```json
-{
-  "modelSettings": {
-    "claude-opus-5": { "effortLevel": "xhigh" }
-  }
-}
-```
-
-User settings (`~/.claude/settings.json`) unless the user asks for this project only.
+Do not write `modelSettings` in `settings.json` for this. That key is per-model, so it would force one effort on every role sharing a model, which is the collision the agent-level field exists to avoid. Leave whatever the user already has there alone.
 
 ### 5. Gate the expensive skills
 
