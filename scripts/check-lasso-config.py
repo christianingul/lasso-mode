@@ -16,6 +16,12 @@ EFFORTS = {"low", "medium", "high", "xhigh"}
 VALID = {"opus", "sonnet", "haiku", "fable", "inherit"}
 
 results = []
+warnings = []
+def warn(name, detail=""):
+    """Something worth knowing that is not a failure. Arming a hook is
+    per-project and deliberate, so an unarmed project is a note, not a break."""
+    warnings.append((name, detail))
+
 def check(name, ok, detail=""):
     # A detail line explains a failure. Printing it on a pass reads as a
     # contradiction ("PASS ... has not run").
@@ -63,6 +69,30 @@ for f in sorted((HOME / "agents").glob("lasso-*.md")):
 check("every agent sets an effort", not no_effort, f"missing effort: {', '.join(no_effort)}")
 check("judgment roles run at xhigh", not weak, f"below xhigh: {', '.join(weak)}")
 
+# 2b. The hooks. lasso-guard blocks destructive commands before they run;
+# lasso-verify re-runs the project's checks when a turn ends. Installed means
+# the file is reachable; armed means a settings.json actually registers it.
+for hook, kind, where in (("lasso-guard", "PreToolUse", "blocks destructive commands"),
+                          ("lasso-verify", "Stop", "re-runs the project's checks")):
+    script = HOME / "hooks" / f"{hook}.sh"
+    check(f"{hook} installed", script.exists(),
+          f"{script} missing — run ./install.sh")
+    armed = False
+    for s in (pathlib.Path(".claude/settings.json"), HOME / "settings.json"):
+        if not s.exists():
+            continue
+        try:
+            blob = json.dumps(json.loads(s.read_text()).get("hooks", {}).get(kind, []))
+        except json.JSONDecodeError:
+            continue
+        if hook in blob:
+            armed = True; break
+    # Arming is per-project and deliberate, so a missing one is a warning, not
+    # a failure: plenty of projects legitimately run without it.
+    if not armed:
+        warn(f"{hook} not armed here",
+             f"no {kind} hook registered — run {script} install")
+
 # 3. Skill flags: only the four typed ones stay blocked.
 flagged = sorted(p.parent.name for p in (REPO / "skills").glob("*/SKILL.md")
                  if "disable-model-invocation" in p.read_text())
@@ -89,8 +119,10 @@ else:
 width = max(len(n) for _, n, _ in results)
 for ok, name, detail in results:
     print(f"  {'PASS' if ok else 'FAIL'}  {name:<{width}}  {detail}")
+for name, detail in warnings:
+    print(f"  warn  {name:<{width}}  {detail}")
 failed = sum(1 for ok, _, _ in results if not ok)
-print(f"\n{len(results)} checks, {failed} failed")
+print(f"\n{len(results)} checks, {failed} failed, {len(warnings)} warnings")
 if failed:
     print("Fix: ./install.sh from this repo, reload, then /setup-lasso")
 sys.exit(1 if failed else 0)

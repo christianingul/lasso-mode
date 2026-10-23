@@ -192,6 +192,8 @@ It fails open by design. No `jq`, no denylist, or an unreadable payload means al
 
 Tune it by editing the denylist. A line that fires on work you actually do is a bad line: narrow it or delete it, rather than teaching yourself to work around the guard.
 
+Arming is per-project and deliberate. `install` writes an absolute path to the hook script into that project's `.claude/settings.json`, so the file is correct for the machine that ran it and wrong for anyone else. This repo gitignores it for that reason. In a project where the whole team should get the guard, commit a `.claude/settings.json` whose command is a path every machine has.
+
 ## Verify hooks (trust but verify)
 
 The router asks the agent to prove its work (`principle-prove-it-works`). A hook enforces it deterministically, without the agent's cooperation. `hooks/lasso-verify.sh` is a `Stop` hook. When an agent finishes a turn that changed the diff, it re-runs the project's checks (typecheck, lint, build, test) and blocks the stop while anything is red, feeding the failing output back so the agent fixes the root cause before finishing.

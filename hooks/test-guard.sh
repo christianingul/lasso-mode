@@ -197,6 +197,49 @@ check allow 'open -a Safari'
 check allow 'grep -rn "password-store" docs/'
 
 echo ""
+# --- install and check modes ----------------------------------------------
+# 303 assertions covered the hook path and none of them ran `install` or
+# `check`, so a set -u bug in install mode shipped unnoticed. These cover the
+# modes a human actually types.
+tmpdir="$(mktemp -d)"
+if "$GUARD" install "$tmpdir" >/dev/null 2>&1 \
+   && [ "$(jq -r '.hooks.PreToolUse[0].matcher' "$tmpdir/.claude/settings.json" 2>/dev/null)" = "Bash" ]; then
+  pass=$((pass+1))
+else
+  fail=$((fail+1)); echo "FAIL [install] did not register a Bash PreToolUse hook"
+fi
+
+# Idempotent: a second install must not stack a duplicate entry.
+"$GUARD" install "$tmpdir" >/dev/null 2>&1
+if [ "$(jq '.hooks.PreToolUse | length' "$tmpdir/.claude/settings.json" 2>/dev/null)" = "1" ]; then
+  pass=$((pass+1))
+else
+  fail=$((fail+1)); echo "FAIL [install] second run duplicated the hook entry"
+fi
+
+# Must leave an unrelated hook alone.
+jq '.hooks.Stop = [{matcher:"",hooks:[{type:"command",command:"/bin/true"}]}]' \
+  "$tmpdir/.claude/settings.json" > "$tmpdir/s.json" && mv "$tmpdir/s.json" "$tmpdir/.claude/settings.json"
+"$GUARD" install "$tmpdir" >/dev/null 2>&1
+if [ "$(jq -r '.hooks.Stop[0].hooks[0].command' "$tmpdir/.claude/settings.json" 2>/dev/null)" = "/bin/true" ]; then
+  pass=$((pass+1))
+else
+  fail=$((fail+1)); echo "FAIL [install] clobbered an unrelated Stop hook"
+fi
+rm -rf "$tmpdir"
+
+# check mode: exit 1 on a blocked command, 0 on a safe one.
+if "$GUARD" check 'rm -rf ~' >/dev/null 2>&1; then
+  fail=$((fail+1)); echo "FAIL [check] 'rm -rf ~' did not report blocked"
+else
+  pass=$((pass+1))
+fi
+if "$GUARD" check 'git status' >/dev/null 2>&1; then
+  pass=$((pass+1))
+else
+  fail=$((fail+1)); echo "FAIL [check] 'git status' did not report allowed"
+fi
+
 # --- the guard must work through a symlink -------------------------------
 # install.sh links this into ~/.claude/hooks while the denylist stays in the
 # repo. Reading patterns relative to the link found nothing, so the guard
