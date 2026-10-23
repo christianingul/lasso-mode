@@ -23,6 +23,11 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 # sits next to the real file in the repo, not next to the link. Reading relative
 # to the link means no patterns file, which means the guard fails open and
 # silently blocks nothing.
+# The path we were invoked by, before resolving symlinks. install registers this
+# one: ~/.claude/hooks/lasso-guard.sh is stable across machines that ran
+# install.sh, while the repo path is not.
+INVOKED_AS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+
 SELF="${BASH_SOURCE[0]}"
 while [ -L "$SELF" ]; do
   link="$(readlink "$SELF")"
@@ -59,7 +64,8 @@ REASON_SUFFIX="Do not retry it and do not work around the guard. Explain the blo
 # --- hook modes -----------------------------------------------------------
 
 run_hook() {
-  local mode="$1" input cmd pattern
+  local mode="$1"
+  local input cmd pattern
   command -v jq >/dev/null 2>&1 || { [ "$mode" = cursor ] && printf '{"permission":"allow"}\n'; exit 0; }
   input="$(cat)"
   # .tool_input = Claude Code and Codex, .toolInput = Grok CLI, .command = Cursor
@@ -83,13 +89,17 @@ run_hook() {
 # --- install --------------------------------------------------------------
 
 do_install() {
-  local dir="${1:-$PWD}" settings="$dir/.claude/settings.json"
+  # Two statements on purpose. In one `local`, the second assignment cannot see
+  # the first, and under `set -u` that is an unbound-variable error, not a
+  # silent empty string.
+  local dir="${1:-$PWD}"
+  local settings="$dir/.claude/settings.json"
   command -v jq >/dev/null 2>&1 || { echo "jq is required to install the hook." >&2; exit 1; }
   mkdir -p "$dir/.claude"
   [ -f "$settings" ] || echo '{}' > "$settings"
   local tmp; tmp="$(mktemp)"
   # Replace any prior lasso-guard entry, keep every other hook intact.
-  jq --arg cmd "$SELF" '
+  jq --arg cmd "$INVOKED_AS" '
     .hooks.PreToolUse = ((.hooks.PreToolUse // [])
       | map(select((.hooks // []) | map(.command // "") | any(test("lasso-guard")) | not))
       + [{matcher: "Bash", hooks: [{type: "command", command: $cmd}]}])
@@ -101,7 +111,8 @@ do_install() {
 # --- manual check and tests ----------------------------------------------
 
 do_check() {
-  local cmd="${1:-}" pattern
+  local cmd="${1:-}"
+  local pattern
   [ -n "$cmd" ] || { echo "usage: $(basename "$SELF") check '<command>'" >&2; exit 64; }
   if pattern="$(match_pattern "$cmd")"; then
     echo "BLOCKED  $cmd"; echo "         matched: $pattern"; exit 1

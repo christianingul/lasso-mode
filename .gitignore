@@ -3,3 +3,10 @@ node_modules/
 *.log
 .env
 .env.local
+
+# Armed-hook registrations. `lasso-guard.sh install` and `lasso-verify.sh
+# install` write an absolute path to the hook script, which is correct for the
+# machine that ran it and wrong for everyone else. Arming is a deliberate
+# per-project step, documented in the README; it is not something a clone
+# should inherit.
+.claude/settings.json
